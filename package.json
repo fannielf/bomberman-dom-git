@@ -1,0 +1,23 @@
+{
+  "name": "bomberman-dom-git",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fannielf/bomberman-dom-git.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fannielf/bomberman-dom-git/issues"
+  },
+  "homepage": "https://github.com/fannielf/bomberman-dom-git#readme",
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
+}
