@@ -1,4 +1,4 @@
-import { gameState, players } from "./models";
+import { gameState, players } from "../models";
 
 // can be calculated from the grid if we don't want to hard code positions
 const playerPositions = [
