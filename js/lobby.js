@@ -31,8 +31,7 @@ socket.onmessage = (event) => {
         if (timer <= 0) {
           clearInterval(timerInterval);
           document.getElementById('timer').textContent = 'Game starting!';
-          // if server is ready, redirect to game page
-          // or for testing purposes, window.location = 'game.html'
+          window.location = 'game.html';
 
         }
       }, 1000);
