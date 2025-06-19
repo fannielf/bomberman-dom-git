@@ -2,7 +2,7 @@ const nickname = localStorage.getItem('nickname');
 if (!nickname) {
   window.location = 'index.html';
 }
-
+// start the ws for the lobby page
 const socket = new WebSocket('ws://localhost:8080');
 
 let countdownStarted = false;

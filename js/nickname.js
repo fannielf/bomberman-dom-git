@@ -1,3 +1,4 @@
+//starting the ws for the front page
 const socket = new WebSocket('ws://localhost:8080');
 
 document.getElementById('join-btn').onclick = function() {
@@ -8,7 +9,7 @@ document.getElementById('join-btn').onclick = function() {
   }
  
   localStorage.setItem('nickname', nickname);
-  //socket.send(JSON.stringify({ type: 'join', nickname }));
+  socket.send(JSON.stringify({ type: 'join', nickname }));
   window.location = 'lobby.html'; //remove later?
 };
 

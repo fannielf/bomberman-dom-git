@@ -15,7 +15,9 @@ function broadcast(data, exclude = null) {
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
+  console.log('New connection');
   ws.on('message', msg => {
+    console.log('Received message:', msg);
     let data;
     try {
       data = JSON.parse(msg); // Parse incoming message as JSON
