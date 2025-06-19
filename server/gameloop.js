@@ -1,4 +1,4 @@
-import { emit, getState, setState } from './framework/index.js';
+import { emit, getState, setState } from '../framework/index.js';
 
 const DEFAULT_TICKRATE = 60; // Default tick rate in frames per second (fps)
 let interval = 1000 / DEFAULT_TICKRATE; // Interval in milliseconds for each tick
