@@ -1,8 +1,9 @@
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
+import { addPlayer } from './game/state';
 
 const server = new WebSocketServer({ port: 8080 }); // Create a WebSocket server on port 8080
 
-const clients = new Map(); // ws -> { nickname }
+const clients = new Map(); // ws -> { id, nickname }
 
 // Broadcasts a message to all connected clients, except the one specified in 'exclude'
 function broadcast(data, exclude = null) {
@@ -39,8 +40,14 @@ server.on('connection', ws => {
               return;
             }
           }
-          clients.set(ws, { nickname: data.nickname }); // Store nickname and connection
+          const id = crypto.randomUUID();
+          clients.set(ws, { id, nickname: data.nickname }); // Store nickname and connection
+          broadcast({ type: 'playerJoined', id, nickname: data.nickname });
           broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname), gameFull: clients.size >= 4 });
+          // if game is full, start countdown
+          if (clients.size === 4) {
+            startCountdown();
+          }
           break;
         }
 
@@ -72,3 +79,30 @@ server.on('connection', ws => {
     broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname) });
   });
 });
+
+// startCountdown function to initiate the game countdown and add players to the game state
+function startCountdown() {
+  gameState.status = 'countdown';
+  gameState.countdown = 10; // Set countdown to 10 seconds
+  broadcast({ type: 'gameStateUpdate', state: gameState });
+  for (let [ws, client] of clients) {
+    // if connection is open, add player to the game state
+    if (ws.readyState !== WebSocket.OPEN) {
+      clients.delete(ws);
+      continue;
+    }
+    addPlayer(client);
+  }
+  const countdownInterval = setInterval(() => {
+    if (gameState.countdown > 0) {
+      gameState.countdown--;
+      broadcast({ type: 'countdown', countdown: gameState.countdown });
+    } else {
+      clearInterval(countdownInterval);
+      gameState.status = 'running';
+      broadcast({ type: 'startGame' });
+      // Initialize game state here if needed
+    }
+  }, 1000);
+
+}
