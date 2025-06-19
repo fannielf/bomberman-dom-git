@@ -19,5 +19,6 @@
   "homepage": "https://github.com/fannielf/bomberman-dom-git#readme",
   "dependencies": {
     "ws": "^8.18.2"
-  }
+  },
+  "type": "module"
 }
