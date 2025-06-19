@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer } from './game/state';
+import { addPlayer } from './game/state.js';
 
 const server = new WebSocketServer({ port: 8080 }); // Create a WebSocket server on port 8080
 
@@ -16,10 +16,12 @@ function broadcast(data, exclude = null) {
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
+  console.log('New client connected'); // Log when a new client connects
   ws.on('message', msg => {
     let data;
     try {
       data = JSON.parse(msg); // Parse incoming message as JSON
+      console.log('Parsed data:', data); // Log parsed data
     } catch {
       broadcast({ type: 'error', message: 'Invalid JSON format' }); // Handle JSON parsing errors
       return;

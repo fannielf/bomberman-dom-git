@@ -8,8 +8,7 @@ document.getElementById('join-btn').onclick = function() {
   }
  
   localStorage.setItem('nickname', nickname);
-  //socket.send(JSON.stringify({ type: 'join', nickname }));
-  window.location = 'lobby.html'; //remove later?
+  socket.send(JSON.stringify({ type: 'join', nickname }));
 };
 
 socket.onmessage = (event) => {
@@ -20,7 +19,10 @@ socket.onmessage = (event) => {
   if (msg.type === 'playerCount') {
     const nickname = localStorage.getItem('nickname');
     if (msg.players && msg.players.includes(nickname)) {
+      console.log('Player added to lobby:', nickname);
       window.location = 'lobby.html';
     }
+  } if (msg.type === 'playerJoined') {
+    window.location = 'lobby.html';
   }
 };
