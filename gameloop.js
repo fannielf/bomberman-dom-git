@@ -37,18 +37,13 @@ function frame(now) {
   requestAnimationFrame(frame); // next frame
 }
 
+// main game logic functionality here later on...
 function update() {
-  const state = getState();
-
-    // implement game logic here
-    // For example, update player positions, check for collisions, etc.
-
-  // Clone or update state as needed
-  const newState = {
-    ...state,
-    // Example: nextBombId: state.nextBombId + 1
+  const prev = getState();
+  const next = {
+    ...prev,
+    tick: (prev.tick ?? 0) + 1,
   };
 
-  // Save updated state
-  setState(newState);
+  setState(next);
 }
