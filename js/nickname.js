@@ -10,7 +10,7 @@ document.getElementById('join-btn').onclick = function() {
   }
  
   localStorage.setItem('nickname', nickname);
-  socket.send(JSON.stringify({ type: 'join', nickname }));
+  socket.send(JSON.stringify({ type: 'join', nickname, page: "player setup" }));
   window.location = 'lobby.html'; //remove later?
 };
 
