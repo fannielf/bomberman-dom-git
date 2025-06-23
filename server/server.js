@@ -1,8 +1,15 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
 import { addPlayer } from './game/state.js';
+import { startGameLoop } from './gameloop.js';
+import { gameState } from './game/state.js';
+import { setState } from '../framework/index.js';
+import { getState } from '../framework/index.js'; // Make sure this is imported
+
+
+setState(gameState); // Initialize game state in the framework
 
 const server = new WebSocketServer({ port: 8080 }); // Create a WebSocket server on port 8080
-
+console.log('WebSocket server is running on ws://localhost:8080'); // Log server start
 const clients = new Map(); // ws -> { id, nickname }
 
 // Broadcasts a message to all connected clients, except the one specified in 'exclude'
@@ -64,6 +71,7 @@ server.on('connection', ws => {
           return;
         }
         broadcast({ type: 'startGame' });
+        console.log('Game started with players:', Array.from(clients.values()).map(c => c.nickname));
         break;
 
       case 'gameUpdate': // Handle game state updates
@@ -84,12 +92,12 @@ server.on('connection', ws => {
 });
 
 // startCountdown function to initiate the game countdown and add players to the game state
+// ...existing code...
 function startCountdown() {
   gameState.status = 'countdown';
-  gameState.countdown = 10; // Set countdown to 10 seconds
+  gameState.countdown = 10;
   broadcast({ type: 'gameStateUpdate', state: gameState });
   for (let [ws, client] of clients) {
-    // if connection is open, add player to the game state
     if (ws.readyState !== WebSocket.OPEN) {
       clients.delete(ws);
       continue;
@@ -104,8 +112,16 @@ function startCountdown() {
       clearInterval(countdownInterval);
       gameState.status = 'running';
       broadcast({ type: 'startGame' });
-      // Initialize game state here if needed
+
+      // Start the game loop and broadcast state on each tick
+      startGameLoop();
+      import('../framework/events.js').then(({ on }) => {
+        on('tick', () => {
+          const state = getState();
+          console.log('Broadcasting gameUpdate:', state); // Add this line
+          broadcast({ type: 'gameUpdate', state });
+        });
+      });
     }
   }, 1000);
-
 }

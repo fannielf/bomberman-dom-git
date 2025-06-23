@@ -20,7 +20,47 @@ socket.onmessage = (event) => {
       div.innerHTML = `<b>${msg.nickname}:</b> ${msg.message}`;
       chatDiv.appendChild(div);
     }
+    if (msg.type === 'gameUpdate') {
+      renderGameState(msg.state);
+    }
   };
+
+
+function renderGameState(state) {
+    console.log('Rendering state:', state); // Add this line
+  const board = document.getElementById('game-board');
+  if (!state || !state.map || !state.map.tiles) {
+    board.textContent = 'Waiting for game state...';
+    return;
+  }
+
+  // Build a 2D array for quick lookup of player positions
+  const playerPositions = {};
+  for (const [id, player] of Object.entries(state.players)) {
+    if (player.alive && player.position) {
+      playerPositions[`${player.position.x},${player.position.y}`] = player.nickname[0].toUpperCase(); // Use first letter of nickname
+    }
+  }
+
+  // Render the board with players
+  board.innerHTML = '';
+  for (let y = 0; y < state.map.height; y++) {
+    let row = '';
+    for (let x = 0; x < state.map.width; x++) {
+      const key = `${x},${y}`;
+      if (playerPositions[key]) {
+        row += `<span style="color:blue;font-weight:bold">${playerPositions[key]}</span>`;
+      } else {
+        const tile = state.map.tiles[y]?.[x] || ' ';
+        if (tile === 'empty') row += '.';
+        else if (tile === 'wall') row += '#';
+        else if (tile === 'block') row += '%';
+        else row += tile[0].toUpperCase();
+      }
+    }
+    board.innerHTML += `<div style="font-family:monospace">${row}</div>`;
+  }
+}
 
   //adding the functionality to the send chat button
 document.getElementById('send-chat').onclick = function() {

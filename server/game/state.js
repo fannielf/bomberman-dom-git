@@ -1,18 +1,27 @@
+import { setState, getState } from '../../framework/index.js';
+
 const players = new Map(); // unique id -> { nickname, lives, position, etc. }
 
-const gameState = {
-  status: 'waiting',  // 'waiting' | 'countdown' | 'running' | 'ended'
-  players: {},       // key = socket.id or playerId
-  map: {              // Game map configuration 
-    width: 13,
-    height: 11,
-    tiles: [],       // 2D array of 'empty' | 'wall' | 'block'
-    powerUps: [],    // [{x, y, type}]
-  },
-  bombs: [],         // [{x, y, ownerId, timer, range}]
-  explosions: [],    // [{x, y, createdAt}]
-  lastUpdate: Date.now()
-};
+function createInitialTiles(width, height) {
+  const tiles = [];
+  for (let y = 0; y < height; y++) {
+    const row = [];
+    for (let x = 0; x < width; x++) {
+      // Border as wall, every other as block, rest empty
+      if (y === 0 || y === height - 1 || x === 0 || x === width - 1) {
+        row.push('wall');
+      } else if (y % 2 === 1 && x % 2 === 1) {
+        row.push('block');
+      } else {
+        row.push('empty');
+      }
+    }
+    tiles.push(row);
+  }
+  return tiles;
+}
+
+
 
 // can be calculated from the grid if we don't want to hard code positions
 const playerPositions = [
@@ -36,10 +45,14 @@ function addPlayer(client) {
     bombRange: 1, // Default bomb range
     bombCount: 1, // Default bomb count
   });
+  gameState.players = Object.fromEntries(players);
+  setState(gameState);
 }
 
 function removePlayer(ws) {
   players.delete(ws);
+  gameState.players = Object.fromEntries(players);
+  setState(gameState);
 }
 
 function looseLife(id) {
@@ -63,6 +76,20 @@ function updatePlayerPosition(id, position) {
     players.get(id).position = position;
   }
 }
+
+const gameState = {
+  status: 'waiting',  // 'waiting' | 'countdown' | 'running' | 'ended'
+  players: {},       // key = socket.id or playerId
+  map: {              // Game map configuration 
+    width: 13,
+    height: 11,
+    tiles: createInitialTiles(13, 11),       // 2D array of 'empty' | 'wall' | 'block'
+    powerUps: [],    // [{x, y, type}]
+  },
+  bombs: [],         // [{x, y, ownerId, timer, range}]
+  explosions: [],    // [{x, y, createdAt}]
+  lastUpdate: Date.now()
+};
 
 export {
   players,
