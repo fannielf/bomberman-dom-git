@@ -1,8 +1,10 @@
+import { broadcast } from "../server.js";
+
 const players = new Map(); // unique id -> { nickname, lives, position, etc. }
 
 const gameState = {
   status: 'waiting',  // 'waiting' | 'countdown' | 'running' | 'ended'
-  players: {},       // key = socket.id or playerId
+  players: {},       // key = playerId
   map: {              // Game map configuration 
     width: 13,
     height: 11,
@@ -22,6 +24,27 @@ const playerPositions = [
     { x: 1, y: 9 },              // Bottom-left
 ];
 
+// startCountdown function to initiate the game countdown and add players to the game state
+export function startCountdown() {
+  gameState.status = 'countdown';
+  gameState.countdown = 10; // Set countdown to 10 seconds
+  broadcast({ type: 'gameStateUpdate', state: gameState });
+  
+  const countdownInterval = setInterval(() => {
+    if (gameState.countdown > 0) {
+      gameState.countdown--;
+      broadcast({ type: 'countdown', countdown: gameState.countdown });
+    } else {
+      clearInterval(countdownInterval);
+      gameState.status = 'running';
+      broadcast({ type: 'startGame' });
+      // Initialize game state here if needed
+    }
+  }, 1000);
+
+}
+
+// adding a player to the game
 function addPlayer(client) {
   if (players.has(client.id) || players.size >= 4 || gameState.status !== 'countdown') return; // Prevent re-adding and limit to 4 players
 
@@ -41,6 +64,7 @@ function addPlayer(client) {
 function removePlayer(ws) {
   players.delete(ws);
 }
+
 
 function looseLife(id) {
     const player = players.get(id);
