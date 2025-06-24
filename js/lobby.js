@@ -1,23 +1,30 @@
 import { sendMessage } from "./ws.js";
-import {on, setState, getState, render, subscribe} from "../framework/index.js"
+import {on, setState, getState} from "../framework/index.js"
 
 setState({
   error: '',
-  gameFull: false
+  gameFull: false,
+  players: [],
+  count: 0
 })
 
 const user = JSON.parse(localStorage.getItem('user'));
-const nickname = user.nickname
-const playerID = user.id;
-if (!user) {
-  window.location = 'index.html';
-} else {
 
+if (!user) {
+  location.hash= '/';
+} else {
   sendMessage({ type: 'pageReload', id: user.id });
 }
 
-function Lobby() {
-  const { error, gameFull } = getState();
+export function Lobby() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) {
+    window.location.hash = '/';
+    return;
+  }
+  const nickname = user.nickname;
+  const playerID = user.id;
+  const { error, gameFull, players, count } = getState();
 
   return {
     tag: 'div',
@@ -32,6 +39,20 @@ function Lobby() {
         tag: 'p',
         attrs: { id: 'welcome' },
         children: [`Welcome, ${nickname}!`]
+      },
+      {
+        tag: 'p',
+        attrs: { id: 'player-count' },
+        children: [`Players: ${count}/4`]
+      },
+      {
+        tag: 'ul',
+        attrs: { id: 'player-list' },
+        children: players.map(name => ({
+          tag: 'li',
+          attrs: {},
+          children: [name]
+        }))
       },
       {
         tag: 'div',
@@ -68,11 +89,6 @@ function Lobby() {
     ]
   };
   }
-
-  const lobbyRoot = document.body;
-  render(Lobby(), lobbyRoot);
-  const unsubLobby = subscribe(() => render(Lobby(), lobbyRoot));
-
 
 on('newChat', ({nickname, message}) => {
   console.log("newChat event received:", nickname, message);

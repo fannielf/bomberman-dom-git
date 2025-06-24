@@ -16,7 +16,7 @@ function connect() {
     console.log("message received:", msg)
     switch (msg.type) {
     case 'chat':
-        if (window.location.pathname === '/index.html') return;
+        if (window.location.hash === '/') return;
         console.log("chat message received:", msg.nickname, msg.message)
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
@@ -26,7 +26,7 @@ function connect() {
     case 'error':
         if (msg.message === 'Client not found by id') {
             localStorage.removeItem('user'); // Remove user from local storage if client not found
-            window.location = 'index.html'; // Redirect to index page
+            window.location.hash = '/'; // Redirect to index page
         } // Ignore this error
         emit('showError', msg.message);
         break;
@@ -44,11 +44,11 @@ function connect() {
         
     })
 
-    setInterval(() => {
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: 'ping' }));
-    }
-}, 20000); // every 20 seconds
+//     setInterval(() => {
+//     if (socket.readyState === WebSocket.OPEN) {
+//         socket.send(JSON.stringify({ type: 'ping' }));
+//     }
+// }, 20000); // every 20 seconds
 
 }
 connect();

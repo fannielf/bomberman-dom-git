@@ -1,6 +1,7 @@
 import { broadcast } from "../server.js";
 
 const players = new Map(); // unique id -> { nickname, lives, position, etc. }
+let readyTimer = null;
 
 const gameState = {
   status: 'waiting',  // 'waiting' | 'countdown' | 'running' | 'ended'
@@ -26,22 +27,28 @@ const playerPositions = [
 
 // startCountdown function to initiate the game countdown and add players to the game state
 export function startCountdown() {
+  if (readyTimer) return; // don't start again
   gameState.status = 'countdown';
-  gameState.countdown = 10; // Set countdown to 10 seconds
-  broadcast({ type: 'gameStateUpdate', state: gameState });
+  let countdown = 10; // Set countdown to 10 seconds
+  broadcast({ type: 'readyTime', countdown });
   
-  const countdownInterval = setInterval(() => {
-    if (gameState.countdown > 0) {
-      gameState.countdown--;
-      broadcast({ type: 'countdown', countdown: gameState.countdown });
-    } else {
-      clearInterval(countdownInterval);
-      gameState.status = 'running';
-      broadcast({ type: 'startGame' });
-      // Initialize game state here if needed
-    }
-  }, 1000);
+  readyTimer = setInterval(() => {
+      countdown--;
+      broadcast({ type: 'readyTimer', countdown });
 
+      if (countdown <= 0) {
+        clearInterval(readyTimer);
+        readyTimer = null;
+        startGame(); // your game start logic
+      }
+    }, 1000);
+
+}
+
+function startGame() {
+  gameState.status = 'running';
+  // Initialize game map with titles and power-ups
+  broadcast({ type: 'gameStarted', players: gameState.players, map: gameState.map });
 }
 
 // adding a player to the game
