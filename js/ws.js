@@ -44,6 +44,9 @@ function connect() {
         localStorage.removeItem('user'); // Remove user from local storage
         window.location.hash = '/'; // Redirect to index page
         break;
+    case 'gameStarted':
+        window.location.hash = '/game';
+        break;
     }
         
     })
