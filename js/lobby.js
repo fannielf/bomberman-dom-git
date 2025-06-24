@@ -24,7 +24,7 @@ function Lobby() {
     attrs: {},
     children: [
       {
-        tag: 'h1',
+        tag: 'h2',
         attrs: {},
         children: ['Lobby']
       },
