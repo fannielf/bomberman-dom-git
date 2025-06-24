@@ -52,13 +52,13 @@ function startGame() {
 }
 
 // adding a player to the game
-function addPlayer(client) {
-  if (players.has(client.id) || players.size >= 4 || gameState.status !== 'countdown') return; // Prevent re-adding and limit to 4 players
+function addPlayer(id, nickname) {
+  if (players.has(id) || players.size >= 4 || gameState.status !== 'countdown') return; // Prevent re-adding and limit to 4 players
 
   const position = playerPositions[players.size];
 
-  players.set(client.id, {
-    nickname: client.nickname,
+  players.set(id, {
+    nickname: nickname,
     lives: 3,
     alive: true,
     position: { ...position },

@@ -40,6 +40,10 @@ function connect() {
         break;
     case 'reconnected':
         console.log("reconnected message received:", msg.nickname)
+    case 'lobbyReset':
+        localStorage.removeItem('user'); // Remove user from local storage
+        window.location.hash = '/'; // Redirect to index page
+        break;
     }
         
     })
