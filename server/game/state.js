@@ -30,7 +30,7 @@ export function startCountdown() {
   if (readyTimer) return; // don't start again
   gameState.status = 'countdown';
   let countdown = 10; // Set countdown to 10 seconds
-  broadcast({ type: 'readyTime', countdown });
+  broadcast({ type: 'readyTimer', countdown });
   
   readyTimer = setInterval(() => {
       countdown--;
