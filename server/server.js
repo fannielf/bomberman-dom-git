@@ -1,24 +1,19 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer } from './game/state.js';
-import { startGameLoop } from './gameloop.js';
-import { gameState } from './game/state.js';
-import { setState } from '../framework/index.js';
-import { getState } from '../framework/index.js'; // Make sure this is imported
+import { addPlayer, startCountdown } from './game/state.js';
 
+const server = new WebSocketServer({ port: 8080 });
 
-setState(gameState); // Initialize game state in the framework
-
-const server = new WebSocketServer({ port: 8080 }); // Create a WebSocket server on port 8080
-console.log('WebSocket server is running on ws://localhost:8080'); // Log server start
-const clients = new Map(); // ws -> { id, nickname }
+const clients = new Map(); // id -> { ws, nickname }
 
 // Broadcasts a message to all connected clients, except the one specified in 'exclude'
-function broadcast(data, exclude = null) {
-  for (let [ws] of clients) {
+export function broadcast(data, exclude=null) {
+
+  for (const { ws } of clients.values()) {
     if (ws !== exclude && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(data));
     }
   }
+
 }
 
 // Handle incoming WebSocket connections
@@ -31,51 +26,75 @@ server.on('connection', ws => {
       data = JSON.parse(msg); // Parse incoming message as JSON
       console.log('Parsed data:', data); // Log parsed data
     } catch {
-      broadcast({ type: 'error', message: 'Invalid JSON format' }); // Handle JSON parsing errors
+      ws.send(JSON.stringify({ type: 'error', message: 'Invalid JSON format' })); // Handle JSON parsing errors
       return;
     }
 
+    let id = data.id || null;
+
+    if (data.type !== 'join' && data.type !== 'ping' && id === null) {
+      ws.send(JSON.stringify({ type: 'error', message: 'Missing playerID' }));
+    }
     // Handle message types
     switch (data.type) {
       case 'join': // Join a game with a nickname
-        if (clients.has(ws)) return; // Prevent re-joining
+        if (clients.has(id)) return; // Prevent re-joining
 
         if (clients.size >= 4) { // Limit to 4 players
-          ws.send(JSON.stringify({ type: 'error', message: 'Game is full' }));
+          ws.send(JSON.stringify({ type: 'error', message: 'Game is full', gameFull: clients.size >= 4 }));
           return;
+
         } else {
+          if (data.nickname === null) {
+            ws.send(JSON.stringify({type: 'error', message: 'Nickname missing'}))
+            return
+          }
           for (let client of clients.values()) { // Check for duplicate nicknames
             if (client.nickname.toLowerCase() === data.nickname.toLowerCase()) {
               ws.send(JSON.stringify({ type: 'error', message: 'Nickname already taken' }));
               return;
             }
           }
-          const id = crypto.randomUUID();
-          clients.set(ws, { id, nickname: data.nickname }); // Store nickname and connection
-          broadcast({ type: 'playerJoined', id, nickname: data.nickname });
-          broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname), gameFull: clients.size >= 4 });
+          id = crypto.randomUUID(); // create unique ID
+          clients.set(id, { ws, nickname:data.nickname }); // Store id, nickname and connection
+          console.log('Client nickname:', clients.get(id).nickname); // Log the nickname of the client
+          ws.send(JSON.stringify({ type: 'playerJoined', id: id, nickname: clients.get(id).nickname })); // Notify client of successful join
           // if game is full, start countdown
           if (clients.size === 4) {
             startCountdown();
+            addPlayer();
           }
           break;
         }
 
       case 'chat': // Handle chat messages
-        broadcast({ type: 'chat', nickname: clients.get(ws).nickname, message: data.message });
+        broadcast({ type: 'chat', nickname: clients.get(id).nickname, message: data.message });
         break;
 
       case 'startGame': // Start the game if enough players are connected
         if (clients.size < 2) {
-          ws.send(JSON.stringify({ type: 'error', message: 'Not enough players to start the game' }));
+          broadcast({ type: 'error', message: 'Not enough players to start the game' });
           return;
         }
-        broadcast({ type: 'startGame' });
-        console.log('Game started with players:', Array.from(clients.values()).map(c => c.nickname));
+        broadcast({ type: 'startGame' }, ws, true);
         break;
 
       case 'gameUpdate': // Handle game state updates
-        broadcast({ type: 'gameUpdate', state: data.state }, ws); // Don't send to sender??
+        broadcast({ type: 'gameUpdate', state: data.state }); // Don't send to sender??
+        break;
+      case 'lobby':
+        broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname), gameFull: clients.size >= 4 });
+        break;
+      case 'pageReload': // update connection when pages are reloaded
+        if (clients.has(id)) {
+          updateConnection(id, ws)
+          ws.send(JSON.stringify({ type: 'reconnected', id, nickname: clients.get(id).nickname }));
+        } else {
+          ws.send(JSON.stringify({ type: 'error', message: 'Client not found by id' }));
+        }
+        break;
+      case 'ping':
+        console.log("ping")
         break;
 
       default: // Handle unknown message types
@@ -89,39 +108,10 @@ server.on('connection', ws => {
     clients.delete(ws);
     broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname) });
   });
+
 });
 
-// startCountdown function to initiate the game countdown and add players to the game state
-// ...existing code...
-function startCountdown() {
-  gameState.status = 'countdown';
-  gameState.countdown = 10;
-  broadcast({ type: 'gameStateUpdate', state: gameState });
-  for (let [ws, client] of clients) {
-    if (ws.readyState !== WebSocket.OPEN) {
-      clients.delete(ws);
-      continue;
-    }
-    addPlayer(client);
-  }
-  const countdownInterval = setInterval(() => {
-    if (gameState.countdown > 0) {
-      gameState.countdown--;
-      broadcast({ type: 'countdown', countdown: gameState.countdown });
-    } else {
-      clearInterval(countdownInterval);
-      gameState.status = 'running';
-      broadcast({ type: 'startGame' });
-
-      // Start the game loop and broadcast state on each tick
-      startGameLoop();
-      import('../framework/events.js').then(({ on }) => {
-        on('tick', () => {
-          const state = getState();
-          console.log('Broadcasting gameUpdate:', state); // Add this line
-          broadcast({ type: 'gameUpdate', state });
-        });
-      });
-    }
-  }, 1000);
+// update the user connection
+function updateConnection(id, conn) {
+    clients.get(id).ws = conn; // Update WebSocket connection for the client
 }

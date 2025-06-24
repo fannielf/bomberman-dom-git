@@ -1,27 +1,20 @@
-import { setState, getState } from '../../framework/index.js';
+import { broadcast } from "../server.js";
 
 const players = new Map(); // unique id -> { nickname, lives, position, etc. }
 
-function createInitialTiles(width, height) {
-  const tiles = [];
-  for (let y = 0; y < height; y++) {
-    const row = [];
-    for (let x = 0; x < width; x++) {
-      // Border as wall, every other as block, rest empty
-      if (y === 0 || y === height - 1 || x === 0 || x === width - 1) {
-        row.push('wall');
-      } else if (y % 2 === 1 && x % 2 === 1) {
-        row.push('block');
-      } else {
-        row.push('empty');
-      }
-    }
-    tiles.push(row);
-  }
-  return tiles;
-}
-
-
+const gameState = {
+  status: 'waiting',  // 'waiting' | 'countdown' | 'running' | 'ended'
+  players: {},       // key = playerId
+  map: {              // Game map configuration 
+    width: 13,
+    height: 11,
+    tiles: [],       // 2D array of 'empty' | 'wall' | 'block'
+    powerUps: [],    // [{x, y, type}]
+  },
+  bombs: [],         // [{x, y, ownerId, timer, range}]
+  explosions: [],    // [{x, y, createdAt}]
+  lastUpdate: Date.now()
+};
 
 // can be calculated from the grid if we don't want to hard code positions
 const playerPositions = [
@@ -31,6 +24,27 @@ const playerPositions = [
     { x: 1, y: 9 },              // Bottom-left
 ];
 
+// startCountdown function to initiate the game countdown and add players to the game state
+export function startCountdown() {
+  gameState.status = 'countdown';
+  gameState.countdown = 10; // Set countdown to 10 seconds
+  broadcast({ type: 'gameStateUpdate', state: gameState });
+  
+  const countdownInterval = setInterval(() => {
+    if (gameState.countdown > 0) {
+      gameState.countdown--;
+      broadcast({ type: 'countdown', countdown: gameState.countdown });
+    } else {
+      clearInterval(countdownInterval);
+      gameState.status = 'running';
+      broadcast({ type: 'startGame' });
+      // Initialize game state here if needed
+    }
+  }, 1000);
+
+}
+
+// adding a player to the game
 function addPlayer(client) {
   if (players.has(client.id) || players.size >= 4 || gameState.status !== 'countdown') return; // Prevent re-adding and limit to 4 players
 
@@ -55,6 +69,7 @@ function removePlayer(ws) {
   setState(gameState);
 }
 
+
 function looseLife(id) {
     const player = players.get(id);
     if (!player) return;
@@ -77,19 +92,6 @@ function updatePlayerPosition(id, position) {
   }
 }
 
-const gameState = {
-  status: 'waiting',  // 'waiting' | 'countdown' | 'running' | 'ended'
-  players: {},       // key = socket.id or playerId
-  map: {              // Game map configuration 
-    width: 13,
-    height: 11,
-    tiles: createInitialTiles(13, 11),       // 2D array of 'empty' | 'wall' | 'block'
-    powerUps: [],    // [{x, y, type}]
-  },
-  bombs: [],         // [{x, y, ownerId, timer, range}]
-  explosions: [],    // [{x, y, createdAt}]
-  lastUpdate: Date.now()
-};
 
 export {
   players,
