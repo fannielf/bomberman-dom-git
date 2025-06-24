@@ -48,16 +48,16 @@ function GameView() {
 
 // --- Local testing setup ---
 
-const emptyTiles = Array.from({ length: 11 }, () => Array(13).fill('empty')); // hardcoded 13x11 grid of empty tiles
+const emptyTiles = Array.from({ length: 13 }, () => Array(13).fill('empty')); // hardcoded 13x11 grid of empty tiles
 
 // get from the global state later on?
 setState({
   // initial state
-  map:        { width: 13, height: 11, tiles: emptyTiles },
+  map:        { width: 13, height: 13, tiles: emptyTiles },
   players:    { p1: { id: 'p1', position: { x: 0, y: 0 }, alive: true, bombCount: 1 } }, // need to keep track of bombcount for placing multiple or one
   bombs:      [],
   explosions: [],
-  info:       'LOCAL TEST MODE', // used for local testing currently...can be removed when multiplayer is implemented
+  info:       'Local testing mode', // used for local testing currently...can be removed when multiplayer is implemented
   playerID:   'p1'               // hardcoded for local testing, should be set by nmbr of players
 });
 
@@ -88,7 +88,7 @@ function handleKeydown(e) {
 
   if (moves[e.key]) {
     const [dx, dy] = moves[e.key];
-    if (info === "LOCAL TEST MODE") {
+    if (info === "Local testing mode") {
       // local movement
       const updated = {
         ...me,
@@ -103,7 +103,7 @@ function handleKeydown(e) {
 
   // Bomb key
   else if (e.key === " ") {
-    if (info === "LOCAL TEST MODE") {
+    if (info === "Local testing mode") {
       // Check if the player has reached their bomb limit.
       if (bombs.length >= me.bombCount) {
         return; // Do nothing if the bomb limit is reached
