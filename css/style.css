@@ -1,0 +1,19 @@
+#game-board {
+  display: inline-block;
+  border: 2px solid #444;
+  margin-top: 1rem;
+}
+.row {
+  display: flex;
+  line-height: 0; /* remove gaps */
+}
+.tile {
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border: 1px solid #888;
+  background: #ddd;
+}
+.tile.player { background: blue; }
+.tile.bomb   { background: orange; }
+.tile.explosion { background: yellow; }

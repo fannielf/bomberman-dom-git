@@ -20,24 +20,26 @@ export function broadcast(data, exclude=null) {
 server.on('connection', ws => {
   console.log('New client connected'); // Log when a new client connects
   ws.on('message', msg => {
-    console.log('Received message:', msg);
     let data;
-    try {
-      data = JSON.parse(msg); // Parse incoming message as JSON
-      console.log('Parsed data:', data); // Log parsed data
-    } catch {
-      ws.send(JSON.stringify({ type: 'error', message: 'Invalid JSON format' })); // Handle JSON parsing errors
+    try { data = JSON.parse(msg) } catch {
+      ws.send(JSON.stringify({ type:'error', message:'Invalid JSON' }));
       return;
     }
 
-    let id = data.id || null;
+    let id = data.id ?? null;
 
-    if (data.type !== 'join' && data.type !== 'ping' && id === null) {
-      ws.send(JSON.stringify({ type: 'error', message: 'Missing playerID' }));
-    } else if (!clients.has(id)) {
-      ws.send(JSON.stringify({ type: 'error', message: 'Client not found by id' }));
-      return;
+    // only validate id for messages after join
+    if (data.type !== 'join' && data.type !== 'ping') {
+      if (id === null) {
+        ws.send(JSON.stringify({ type:'error', message:'Missing playerID' }));
+        return;
+      }
+      if (!clients.has(id)) {
+        ws.send(JSON.stringify({ type:'error', message:'Client not found by id' }));
+        return;
+      }
     }
+
     // Handle message types
     switch (data.type) {
       case 'join': // Join a game with a nickname
