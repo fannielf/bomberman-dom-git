@@ -34,6 +34,9 @@ server.on('connection', ws => {
 
     if (data.type !== 'join' && data.type !== 'ping' && id === null) {
       ws.send(JSON.stringify({ type: 'error', message: 'Missing playerID' }));
+    } else if (!clients.has(id)) {
+      ws.send(JSON.stringify({ type: 'error', message: 'Client not found by id' }));
+      return;
     }
     // Handle message types
     switch (data.type) {
