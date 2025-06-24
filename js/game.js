@@ -1,27 +1,107 @@
-import { sendMessage } from "./ws";
+import { sendMessage } from "./ws.js";
+import { setState, getState, on } from "../framework/index.js";
 
-const user = JSON.parse(localStorage.getItem('user'));
+setState({
+  gameInfo: "",
+  map: null
+});
 
-const nickname = user.nickname;
-const playerID = user.id;
+export function Game() {
+  const user = JSON.parse(localStorage.getItem("user"));
 
-if (!nickname && !playerID) {
-    window.location = 'index.html';
-} else {
-    document.getElementById('game-info').textContent = `Good luck, ${nickname}!`;
+  if (!user) {
+    window.location.hash = "/";
+    return;
+  }
 
-  //adding the functionality to the send chat button
-document.getElementById('send-chat').onclick = function() {
-    const message = document.getElementById('chat-input').value.trim();
-    if (message) {
-      sendMessage({ type: 'chat', id: playerID, nickname, message });
-      document.getElementById('chat-input').value = ''; //clear input field after sending
-    }
-  };
+  const nickname = user.nickname;
+  const playerID = user.id;
+  const { gameInfo, map } = getState();
 
-  //when wanting to leave the game, redirect to index.html
-  document.getElementById('leave-game').onclick = function() {
-    sendMessage({type: 'leaveGame', id: playerID})
-    window.location = 'index.html';
+  return {
+    tag: "div",
+    children: [
+      {
+        tag: "h2",
+        children: ["Bomberman"],
+      },
+      {
+        tag: "div",
+        attrs: { id: "game-board" },
+        children: map ? renderGameBoard(map) : []
+      },
+      {
+        tag: "p",
+        attrs: { id: "game-info" },
+        children: [gameInfo || `Good luck, ${nickname}!`],
+      },
+      {
+        tag: "button",
+        attrs: {
+          onclick: () => {
+            sendMessage({ type: "leaveGame", id: playerID });
+            window.location.hash = "/";
+          },
+        },
+        children: ["Leave Game"],
+      },
+      {
+        tag: "div",
+        attrs: { id: "chat" },
+        children: [],
+      },
+      {
+        tag: "input",
+        attrs: {
+          id: "chat-input",
+          placeholder: "Type message...",
+        },
+      },
+      {
+        tag: "button",
+        attrs: {
+          onclick: () => {
+            const message = document.getElementById("chat-input").value.trim();
+            if (message) {
+              sendMessage({ type: "chat", id: playerID, nickname, message });
+              document.getElementById("chat-input").value = "";
+            }
+          },
+        },
+        children: ["Send"],
+      },
+    ],
   };
 }
+
+function renderGameBoard(map) {
+  const cells = [];
+  for (let row = 0; row < 13; row++) {
+    for (let col = 0; col < 15; col++) {
+      let cellClass = "cell";
+      const cellType = map[row] && map[row][col];
+      
+      if (cellType === "wall") {
+        cellClass += " wall";
+      } else if (cellType === "destructible-wall") {
+        cellClass += " destructible-wall";
+      }
+
+      cells.push({
+        tag: "div",
+        attrs: {
+          className: cellClass,
+          "data-row": row,
+          "data-col": col,
+        },
+        children: []
+      });
+    }
+  }
+  return cells;
+}
+
+// Handle game start message
+on('gameStarted', ({ map }) => {
+  setState({ map });
+});

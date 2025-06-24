@@ -15,6 +15,9 @@ function connect() {
     const msg = JSON.parse(event.data);
     console.log("message received:", msg)
     switch (msg.type) {
+    case 'readyTimer': // Add this case
+        emit('readyTimer', { countdown: msg.countdown });
+        break;
     case 'chat':
         if (window.location.hash === '/') return;
         console.log("chat message received:", msg.nickname, msg.message)
@@ -45,6 +48,7 @@ function connect() {
         window.location.hash = '/'; // Redirect to index page
         break;
     case 'gameStarted':
+        emit('gameStarted', { map: msg.map, players: msg.players });
         window.location.hash = '/game';
         break;
     }

@@ -173,3 +173,35 @@ function statusCountdown() {
   waitTimer = null;
   firstJoinTime = null;
 }
+
+function generateGameMap() {
+  const rows = 13;
+  const cols = 15;
+  const map = [];
+
+  for (let row = 0; row < rows; row++) {
+    map[row] = [];
+    for (let col = 0; col < cols; col++) {
+      if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
+        map[row][col] = "wall";
+      }
+      else if (row % 2 === 0 && col % 2 === 0) {
+        map[row][col] = "wall";
+      }
+      else if (
+        (row <= 2 && col <= 2) ||
+        (row <= 2 && col >= cols - 3) ||
+        (row >= rows - 3 && col <= 2) ||
+        (row >= rows - 3 && col >= cols - 3)
+      ) {
+        map[row][col] = "empty";
+      }
+      else if (Math.random() < 0.3) {
+        map[row][col] = "destructible-wall";
+      } else {
+        map[row][col] = "empty";
+      }
+    }
+  }
+  return map;
+}

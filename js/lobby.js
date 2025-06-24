@@ -5,7 +5,8 @@ setState({
   error: '',
   gameFull: false,
   players: [],
-  count: 0
+  count: 0,
+  countdown: null // Add this line
 })
 
 const user = JSON.parse(localStorage.getItem('user'));
@@ -24,7 +25,7 @@ export function Lobby() {
   }
   const nickname = user.nickname;
   const playerID = user.id;
-  const { error, gameFull, players, count } = getState();
+  const { error, gameFull, players, count, countdown } = getState(); // Add countdown here
 
   return {
     tag: 'div',
@@ -45,6 +46,12 @@ export function Lobby() {
         attrs: { id: 'player-count' },
         children: [`Players: ${count}/4`]
       },
+      // Add countdown display
+      countdown !== null ? {
+        tag: 'p',
+        attrs: { style: 'font-size: 20px; font-weight: bold; color: red;' },
+        children: [`Game starting in: ${countdown}`]
+      } : null,
       {
         tag: 'ul',
         attrs: { id: 'player-list' },
@@ -89,6 +96,11 @@ export function Lobby() {
     ]
   };
   }
+
+// Add countdown handler
+on('readyTimer', ({ countdown }) => {
+  setState({ countdown });
+});
 
 on('newChat', ({nickname, message}) => {
   console.log("newChat event received:", nickname, message);
