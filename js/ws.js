@@ -24,6 +24,10 @@ function connect() {
         window.location = 'game.html';
         break;
     case 'error':
+        if (msg.message === 'Client not found by id') {
+            localStorage.removeItem('user'); // Remove user from local storage if client not found
+            window.location = 'index.html'; // Redirect to index page
+        } // Ignore this error
         emit('showError', msg.message);
         break;
     case 'playerCount':
