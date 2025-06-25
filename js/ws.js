@@ -51,6 +51,9 @@ function connect() {
         emit('gameStarted', { map: msg.map, players: msg.players });
         window.location.hash = '/game';
         break;
+    case 'playerMoved':
+        emit('playerMoved', { id: msg.id, position: msg.position });
+        break;
     }
         
     })

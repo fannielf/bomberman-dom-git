@@ -39,6 +39,7 @@ function addPlayer(client) {
   const position = playerPositions[positionIndex];
 
   players.set(client.id, {
+    id: client.id,
     nickname: client.nickname,
     lives: 3,
     alive: true,
@@ -86,6 +87,60 @@ function updatePlayerPosition(id, position) {
   return false;
 }
 
+function handlePlayerMove(id, direction) {
+  const player = players.get(id);
+  if (!player || !player.alive) return;
+
+  const { position } = player;
+  const newPosition = { ...position };
+
+  switch (direction) {
+    case "up":
+      newPosition.y -= 1;
+      break;
+    case "down":
+      newPosition.y += 1;
+      break;
+    case "left":
+      newPosition.x -= 1;
+      break;
+    case "right":
+      newPosition.x += 1;
+      break;
+    default:
+      return; // Invalid direction
+  }
+
+  if (isPositionValid(newPosition)) {
+    player.position = newPosition;
+    // Broadcast the move to all clients
+    broadcast({ type: "playerMoved", id, position: newPosition });
+  }
+}
+
+function isPositionValid({ x, y }) {
+  if (!gameState.map.tiles) return false;
+  // Check bounds
+  if (y < 0 || y >= gameState.map.height || x < 0 || x >= gameState.map.width) {
+    return false;
+  }
+
+  // Check for collisions with walls
+  const tile = gameState.map.tiles[y][x];
+  if (tile === "wall" || tile === "destructible-wall") {
+    return false;
+  }
+
+  // Check for collisions with other players
+  for (const p of players.values()) {
+    if (p.alive && p.position && p.position.x === x && p.position.y === y) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export {
   players,
   gameState,
@@ -96,6 +151,7 @@ export {
   updatePlayerPosition,
   playerPositions,
   startCountdown,
+  handlePlayerMove,
 };
 
 // New functions for game management
