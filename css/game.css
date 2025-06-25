@@ -1,0 +1,44 @@
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(15, 25px);
+    grid-template-rows: repeat(13, 25px);
+    gap: 1px;
+    margin: 20px auto;
+    width: fit-content;
+}
+
+.cell {
+    width: 25px;
+    height: 25px;
+    background-color: #90EE90;
+    border: 1px solid #228B22;
+    position: relative;
+}
+
+.wall {
+    background-image: url('../assets/solidwall.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.destructible-wall {
+    background-image: url('../assets/wall_cobblestone_32px.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.player {
+    width: 20px;
+    height: 20px;
+    background-image: url('../assets/player.png'); /* your image path here */
+    background-size: cover;
+    background-position: center;
+    border: none; /* remove border if not needed */
+    border-radius: 0; /* remove if your image isn't circular */
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    z-index: 10;
+}

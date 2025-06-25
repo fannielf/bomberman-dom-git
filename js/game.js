@@ -1,123 +1,107 @@
 import { sendMessage } from "./ws.js";
-import { subscribe, getState, render, setState } from "../framework/index.js";
-import { startGameLoop } from '../server/gameloop.js';
+import { setState, getState, on } from "../framework/index.js";
 
-function GameView() {
-  const state = getState();
-  const { map, players = {}, bombs = [], explosions = [], info } = state;
+setState({
+  gameInfo: "",
+  map: null
+});
 
-  if (!map) {
-    return { tag: 'div', children: [ info || 'Waiting for game to start…' ] };
+export function Game() {
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (!user) {
+    window.location.hash = "/";
+    return;
   }
 
-  // build rows of tiles
-  const rows = [];
-  for (let y = 0; y < map.height; y++) {
-    const cells = [];
-    for (let x = 0; x < map.width; x++) {
-      let cls = map.tiles[y][x] || 'empty';
-      if (bombs.find(b => b.x===x && b.y===y))           cls += ' bomb';
-      if (explosions.find(e => e.x===x && e.y===y))      cls += ' explosion';
-      Object.values(players).forEach(p =>
-        p.alive && p.position.x===x && p.position.y===y 
-          ? cls += ` player p${p.id}` 
-          : null
-      );
+  const nickname = user.nickname;
+  const playerID = user.id;
+  const { gameInfo, map } = getState();
+
+  return {
+    tag: "div",
+    children: [
+      {
+        tag: "h2",
+        children: ["Bomberman"],
+      },
+      {
+        tag: "div",
+        attrs: { id: "game-board" },
+        children: map ? renderGameBoard(map) : []
+      },
+      {
+        tag: "p",
+        attrs: { id: "game-info" },
+        children: [gameInfo || `Good luck, ${nickname}!`],
+      },
+      {
+        tag: "button",
+        attrs: {
+          onclick: () => {
+            sendMessage({ type: "leaveGame", id: playerID });
+            window.location.hash = "/";
+          },
+        },
+        children: ["Leave Game"],
+      },
+      {
+        tag: "div",
+        attrs: { id: "chat" },
+        children: [],
+      },
+      {
+        tag: "input",
+        attrs: {
+          id: "chat-input",
+          placeholder: "Type message...",
+        },
+      },
+      {
+        tag: "button",
+        attrs: {
+          onclick: () => {
+            const message = document.getElementById("chat-input").value.trim();
+            if (message) {
+              sendMessage({ type: "chat", id: playerID, nickname, message });
+              document.getElementById("chat-input").value = "";
+            }
+          },
+        },
+        children: ["Send"],
+      },
+    ],
+  };
+}
+
+function renderGameBoard(map) {
+  const cells = [];
+  for (let row = 0; row < 13; row++) {
+    for (let col = 0; col < 15; col++) {
+      let cellClass = "cell";
+      const cellType = map[row] && map[row][col];
+      
+      if (cellType === "wall") {
+        cellClass += " wall";
+      } else if (cellType === "destructible-wall") {
+        cellClass += " destructible-wall";
+      }
+
       cells.push({
-        tag: 'div',
-        attrs: { class: `tile ${cls}` },
+        tag: "div",
+        attrs: {
+          className: cellClass,
+          "data-row": row,
+          "data-col": col,
+        },
         children: []
       });
     }
-    rows.push({
-      tag: 'div',
-      attrs: { class: 'row' },
-      children: cells
-    });
   }
-
-  return {
-    tag: 'div',
-    attrs: { id: 'game-container' },
-    children: [
-      { tag:'div', attrs:{ id:'game-board' }, children: rows },
-      { tag:'p', attrs:{ id:'game-info' }, children:[ info || '' ] }
-    ]
-  };
+  return cells;
 }
 
-// --- Local testing setup ---
-
-const emptyTiles = Array.from({ length: 13 }, () => Array(13).fill('empty')); // hardcoded 13x11 grid of empty tiles
-
-// get from the global state later on?
-setState({
-  // initial state
-  map:        { width: 13, height: 13, tiles: emptyTiles },
-  players:    { p1: { id: 'p1', position: { x: 0, y: 0 }, alive: true, bombCount: 1 } }, // need to keep track of bombcount for placing multiple or one
-  bombs:      [],
-  explosions: [],
-  info:       'Local testing mode', // used for local testing currently...can be removed when multiplayer is implemented
-  playerID:   'p1'               // hardcoded for local testing, should be set by nmbr of players
+// Handle game start message
+on('gameStarted', ({ map }) => {
+  setState({ map });
 });
-
-startGameLoop();
-
-// re-render on state changes
-const root = document.getElementById("game-board") || document.body;
-render(GameView(), root);
-subscribe(() => {
-  render(GameView(), root);
-});
-
-// globally listen for arrows / space, screw event bus
-window.addEventListener("keydown", handleKeydown);
-
-function handleKeydown(e) {
-  const { players = {}, playerID, info, bombs = [] } = getState();
-  const me = players[playerID];
-  if (!me || !me.position) return;
-
-  // Movement keys
-  const moves = {
-    ArrowUp:    [ 0, -1 ],
-    ArrowDown:  [ 0,  1 ],
-    ArrowLeft:  [ -1, 0 ],
-    ArrowRight: [ 1,  0 ]
-  };
-
-  if (moves[e.key]) {
-    const [dx, dy] = moves[e.key];
-    if (info === "Local testing mode") {
-      // local movement
-      const updated = {
-        ...me,
-        position: { x: me.position.x + dx, y: me.position.y + dy }
-      };
-      setState({ players: { ...players, [playerID]: updated } });
-    } else {
-      // else send move message to server for updates
-      sendMessage({ type: "move", id: playerID, dx, dy });
-    }
-  }
-
-  // Bomb key
-  else if (e.key === " ") {
-    if (info === "Local testing mode") {
-      // Check if the player has reached their bomb limit.
-      if (bombs.length >= me.bombCount) {
-        return; // Do nothing if the bomb limit is reached
-      }
-      setState({
-        bombs: bombs.concat({
-          x: me.position.x,
-          y: me.position.y,
-          timer: 2000,
-        })
-      });
-    } else {
-      // send bomb placement message to server
-      sendMessage({ type: "bomb", id: playerID });
-    }
-  }
-}

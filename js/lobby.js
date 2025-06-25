@@ -1,23 +1,31 @@
 import { sendMessage } from "./ws.js";
-import {on, setState, getState, render, subscribe} from "../framework/index.js"
+import {on, setState, getState} from "../framework/index.js"
 
 setState({
   error: '',
-  gameFull: false
+  gameFull: false,
+  players: [],
+  count: 0,
+  countdown: null // Add this line
 })
 
 const user = JSON.parse(localStorage.getItem('user'));
-const nickname = user.nickname
-const playerID = user.id;
-if (!user) {
-  window.location = 'index.html';
-} else {
 
+if (!user) {
+  location.hash= '/';
+} else {
   sendMessage({ type: 'pageReload', id: user.id });
 }
 
-function Lobby() {
-  const { error, gameFull } = getState();
+export function Lobby() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) {
+    window.location.hash = '/';
+    return;
+  }
+  const nickname = user.nickname;
+  const playerID = user.id;
+  const { error, gameFull, players, count, countdown } = getState(); // Add countdown here
 
   return {
     tag: 'div',
@@ -32,6 +40,26 @@ function Lobby() {
         tag: 'p',
         attrs: { id: 'welcome' },
         children: [`Welcome, ${nickname}!`]
+      },
+      {
+        tag: 'p',
+        attrs: { id: 'player-count' },
+        children: [`Players: ${count}/4`]
+      },
+      // Add countdown display
+      countdown !== null ? {
+        tag: 'p',
+        attrs: { style: 'font-size: 20px; font-weight: bold; color: red;' },
+        children: [`Game starting in: ${countdown}`]
+      } : null,
+      {
+        tag: 'ul',
+        attrs: { id: 'player-list' },
+        children: players.map(name => ({
+          tag: 'li',
+          attrs: {},
+          children: [name]
+        }))
       },
       {
         tag: 'div',
@@ -69,10 +97,10 @@ function Lobby() {
   };
   }
 
-  const lobbyRoot = document.body;
-  render(Lobby(), lobbyRoot);
-  const unsubLobby = subscribe(() => render(Lobby(), lobbyRoot));
-
+// Add countdown handler
+on('readyTimer', ({ countdown }) => {
+  setState({ countdown });
+});
 
 on('newChat', ({nickname, message}) => {
   console.log("newChat event received:", nickname, message);
