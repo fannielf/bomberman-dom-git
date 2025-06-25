@@ -41,11 +41,3 @@ export function Chat({ playerID, nickname }) {
     ]
   };
 }
-
-// Chat state and handler (can be imported in both lobby and game)
-on('newChat', ({ nickname, message }) => {
-  const { chatMessages } = getState();
-  setState({
-    chatMessages: [...chatMessages, { nickname, message }]
-  });
-});

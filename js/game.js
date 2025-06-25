@@ -2,12 +2,6 @@ import { sendMessage } from "./ws.js";
 import { Chat } from "./chat.js";
 import { setState, getState, on } from "../framework/index.js";
 
-setState({
-  gameInfo: "",
-  map: null,
-  players: [],
-});
-
 // game loop and input handling logic
 let gameLoopActive = false;
 const keysPressed = new Set();
