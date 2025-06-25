@@ -27,36 +27,43 @@ export function Lobby() {
       {
         tag: 'h2',
         attrs: {},
+        key: 'lobby-title',
         children: ['Lobby']
       },
       {
         tag: 'p',
         attrs: { id: 'welcome' },
+        key: 'welcome-message',
         children: [`Welcome, ${nickname}!`]
       },
       {
         tag: 'p',
         attrs: { id: 'player-count' },
+        key: 'player-count',
         children: [`Players: ${count}/4`]
       },
       // Add countdown display
       countdown !== null ? {
         tag: 'p',
         attrs: { style: 'font-size: 20px; font-weight: bold; color: red;' },
+        key: 'countdown',
         children: [`Game starting in: ${countdown}`]
-      } : [],
+      } : null,
       {
         tag: 'ul',
         attrs: { id: 'player-list' },
-        children: players.map(name => ({
+        key: 'player-list',
+        children: players.map((name, index) => ({
           tag: 'li',
           attrs: {},
+          key: `player-${index}-${name}`,
           children: [name]
         }))
       },
       {
         tag: 'div',
         attrs: {},
+        key: 'chat-container',
         children: [
           Chat({ playerID, nickname }) // Include Chat component
         ]
@@ -64,6 +71,7 @@ export function Lobby() {
       {
         tag: 'p',
         attrs: { id: 'error', style: 'color:red' },
+        key: 'error-message',
         children: [error || '']
       }
     ]

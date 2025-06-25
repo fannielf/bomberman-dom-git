@@ -7,12 +7,15 @@ export function Chat({ playerID, nickname }) {
   return {
     tag: 'div',
     attrs: { id: 'chat-container' },
+    key: 'chat-root',
     children: [
       {
         tag: 'div',
         attrs: { id: 'chat' },
-        children: chatMessages.map(({ nickname, message }) => ({
+        key: 'chat-messages',
+        children: chatMessages.map(({ nickname, message }, index) => ({
           tag: 'div',
+          key: `message-${index}-${nickname}-${message.substring(0, 10)}`,
           children: [`${nickname}: ${message}`]
         }))
       },
@@ -22,6 +25,7 @@ export function Chat({ playerID, nickname }) {
           id: 'chat-input',
           placeholder: 'Type your message here...'
         },
+        key: 'chat-input',
         children: []
       },
       {
@@ -36,6 +40,7 @@ export function Chat({ playerID, nickname }) {
             }
           }
         },
+        key: 'send-button',
         children: ['Send']
       }
     ]

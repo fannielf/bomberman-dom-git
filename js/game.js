@@ -80,19 +80,23 @@ export function Game() {
 
   return {
     tag: "div",
+    key: "game-root",
     children: [
       {
         tag: "h2",
+        key: "game-title",
         children: ["Bomberman"],
       },
       {
         tag: "div",
         attrs: { id: "game-board" },
+        key: "game-board",
         children: map ? renderGameBoard(map, players) : [],
       },
       {
         tag: "p",
         attrs: { id: "game-info" },
+        key: "game-info",
         children: [gameInfo || `Good luck, ${nickname}!`],
       },
       {
@@ -105,11 +109,13 @@ export function Game() {
             window.location.hash = "/";
           },
         },
+        key: "leave-game-button",
         children: ["Leave Game"],
       },
       {
         tag: 'div',
         attrs: {},
+        key: 'game-chat-container',
         children: [
           Chat({ playerID, nickname }) // Include Chat component
         ]
@@ -141,6 +147,7 @@ function renderGameBoard(map, players) {
           "data-row": row,
           "data-col": col,
         },
+        key: `cell-${row}-${col}`,
         children: [],
       });
     }
@@ -157,6 +164,7 @@ function renderGameBoard(map, players) {
             attrs: {
               className: 'player'
             },
+            key: `player-${player.id}`,
             children: []
           });
         }

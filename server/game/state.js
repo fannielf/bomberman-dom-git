@@ -52,7 +52,7 @@ export function deActivePlayer(id) {
   if (!player) return;
   player.alive = false;
   player.position = null; // Remove position if player is deactivated
-  lives = 0; // Reset lives
+  player.lives = 0; // Reset lives
   broadcast({ type: "playerDeactivated", nickname: player.nickname });
   removePlayer(id); // Remove player from the game
   if (players.size === 1) {

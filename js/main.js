@@ -7,6 +7,7 @@ export function Main() {
 return {
   tag: 'div',
   attrs: {},
+  key: 'main-root',
   children: [
     {
       tag: 'input',
@@ -15,6 +16,7 @@ return {
         placeholder: 'Enter nickname',
         value: nickname || ''
       },
+      key: 'nickname-input',
       children: []
     },
     {
@@ -31,6 +33,7 @@ return {
           sendMessage({ type: 'join', nickname });
         }
       },
+      key: 'join-button',
       children: ['Join Game']
     },
     {
@@ -39,6 +42,7 @@ return {
         id: 'error',
         style: 'color:red'
       },
+      key: 'error-message',
       children: [error || '']
     },
   ]
