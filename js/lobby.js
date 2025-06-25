@@ -1,11 +1,11 @@
 import { sendMessage } from "./ws.js";
-import {on, setState, getState} from "../framework/index.js"
+import { getState, subscribe, render } from "../framework/index.js"
 import { Chat } from "./chat.js";
 
 const user = JSON.parse(localStorage.getItem('user'));
 
 if (!user) {
-  location.hash= '/';
+  window.location.hash= '/';
 } else {
   sendMessage({ type: 'pageReload', id: user.id });
 }
@@ -70,7 +70,4 @@ export function Lobby() {
   };
   }
 
-// Add countdown handler
-on('readyTimer', ({ countdown }) => {
-  setState({ countdown });
-});
+subscribe(() => {render(Lobby(), document.getElementById('app'))});

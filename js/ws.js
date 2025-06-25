@@ -51,15 +51,20 @@ function connect() {
         emit('gameStarted', { map: msg.map, players: msg.players });
         window.location.hash = '/game';
         break;
+    case 'playerDeactivated':
+        console.log("playerDeactivated message received:", msg.nickname)
+        emit('playerDeactivated', { id: msg.id, nickname: msg.nickname });
+        break;
+    case 'gameEnded':
+        console.log("gameEnded message received:", msg.winner)
+        emit('gameEnded', { winner: msg.winner });
+    case 'gameReset':
+        localStorage.removeItem('user'); // Remove user from local storage
+        window.location.hash = '/'; // Redirect to index page
+        break;
     }
         
     })
-
-//     setInterval(() => {
-//     if (socket.readyState === WebSocket.OPEN) {
-//         socket.send(JSON.stringify({ type: 'ping' }));
-//     }
-// }, 20000); // every 20 seconds
 
 }
 connect();

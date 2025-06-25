@@ -13,12 +13,6 @@ export function initRouter(rootElementId) {
     window.onload = () => {
     handleRouteChange();
   };
-  // window.onload = () => { //clear the hash on initial load
-  //   if (location.hash) {
-  //     history.replaceState(null, "", location.pathname + location.search);
-  //   }
-  //   handleRouteChange();
-  // };
 }
 
 //addRoute function to register a new route

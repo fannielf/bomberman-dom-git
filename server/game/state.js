@@ -1,6 +1,7 @@
 import { broadcast } from "../server.js";
 
 const players = new Map();
+const playerPositions = [];
 let readyTimer = null;
 
 const gameState = {
@@ -17,14 +18,6 @@ const gameState = {
   explosions: [],
   lastUpdate: Date.now(),
 };
-
-// can be calculated from the grid if we don't want to hard code positions
-const playerPositions = [
-  { x: 1, y: 1 }, // Top-left
-  { x: 13, y: 11 }, // Bottom-right
-  { x: 13, y: 1 }, // Top-right
-  { x: 1, y: 11 }, // Bottom-left
-];
 
 // adding a player to the game
 function addPlayer(client) {
@@ -60,6 +53,16 @@ export function deActivePlayer(id) {
   player.position = null; // Remove position if player is deactivated
   lives = 0; // Reset lives
   broadcast({ type: "playerDeactivated", nickname: player.nickname });
+  removePlayer(id); // Remove player from the game
+  if (players.size === 1) {
+    // If only one player left, end the game
+    const winner = Array.from(players.values())[0];
+    gameState.status = "ended";
+    broadcast({
+      type: "gameEnded",
+      winner: winner.nickname,
+    });
+  }
 }
 
 function looseLife(id) {
@@ -106,6 +109,8 @@ function startCountdown() {
 
   // Generate the map when countdown starts
   gameState.map = generateGameMap();
+  playerPositions.length = 0; // Reset player positions
+  playerPositions.push(...getPlayerPositions(gameState.map.tiles));
 
   broadcast({ type: "readyTimer", countdown });
 
@@ -164,4 +169,26 @@ function generateGameMap() {
     tiles,
     powerUps: [],
   };
+}
+
+
+function getPlayerPositions(tiles) {
+  const height = tiles.length;
+  const width = tiles[0].length;
+
+  const quadrants = [
+    { xRange: [1, 3], yRange: [1, 3] }, // top-left
+    { xRange: [width - 4, width - 2], yRange: [1, 3] }, // top-right
+    { xRange: [1, 3], yRange: [height - 4, height - 2] }, // bottom-left
+    { xRange: [width - 4, width - 2], yRange: [height - 4, height - 2] }, // bottom-right
+  ];
+
+  return quadrants.map(({ xRange, yRange }) => {
+    for (let y = yRange[0]; y <= yRange[1]; y++) {
+      for (let x = xRange[0]; x <= xRange[1]; x++) {
+        if (tiles[y][x] === "empty") return { x, y };
+      }
+    }
+    return { x: xRange[0], y: yRange[0] }; // fallback if no empty tile found
+  });
 }

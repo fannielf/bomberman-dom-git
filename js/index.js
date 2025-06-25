@@ -1,7 +1,8 @@
-import { initRouter, addRoute, setState } from "../framework/index.js";
+import { initRouter, addRoute, setState} from "../framework/index.js";
 import { Main } from "./main.js";
 import { Lobby } from "./lobby.js";
 import { Game } from "./game.js";
+import './handlers.js';
 
 initRouter('app'); // sets up router and assigns root DOM node
 
@@ -17,5 +18,6 @@ setState({
   count: 0,
   countdown: null,
   chatMessages: [],
-  page: 'main' // Default page
-})
+  gameInfo: '',
+  map: null,
+});

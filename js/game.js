@@ -1,11 +1,6 @@
 import { sendMessage } from "./ws.js";
 import { Chat } from "./chat.js";
-import { setState, getState, on } from "../framework/index.js";
-
-setState({
-  gameInfo: "",
-  map: null
-});
+import { getState } from "../framework/index.js";
 
 export function Game() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -87,8 +82,3 @@ function renderGameBoard(map) {
   }
   return cells;
 }
-
-// Handle game start message
-on('gameStarted', ({ map }) => {
-  setState({ map });
-});
