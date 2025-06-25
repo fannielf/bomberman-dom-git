@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer, startCountdown } from './game/state.js';
+import { addPlayer, deActivePlayer, startCountdown } from './game/state.js';
 
 const server = new WebSocketServer({ port: 8080 });
 
@@ -95,6 +95,9 @@ server.on('connection', ws => {
       case 'ping':
         console.log("ping")
         break;
+      case 'leaveGame':
+        deActivePlayer(id); // Deactivate player
+        clients.delete(id); // Remove client from the map
 
       default: // Handle unknown message types
         ws.send(JSON.stringify({ type: 'error', message: 'Unknown message type' }));
@@ -120,7 +123,7 @@ function sendLobbyUpdate() {
 }
 
 function handleJoin(id, ws, data) {
-  console.log("Handle join triggered:", data)
+
   if (clients.has(id)) { // Prevent re-joining
       ws.send(JSON.stringify({ type: 'playerExists', id: id, nickname: clients.get(id).nickname })); // Notify client of successful join
       return;
@@ -172,36 +175,4 @@ function statusCountdown() {
   clearInterval(waitTimer);
   waitTimer = null;
   firstJoinTime = null;
-}
-
-function generateGameMap() {
-  const rows = 13;
-  const cols = 15;
-  const map = [];
-
-  for (let row = 0; row < rows; row++) {
-    map[row] = [];
-    for (let col = 0; col < cols; col++) {
-      if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
-        map[row][col] = "wall";
-      }
-      else if (row % 2 === 0 && col % 2 === 0) {
-        map[row][col] = "wall";
-      }
-      else if (
-        (row <= 2 && col <= 2) ||
-        (row <= 2 && col >= cols - 3) ||
-        (row >= rows - 3 && col <= 2) ||
-        (row >= rows - 3 && col >= cols - 3)
-      ) {
-        map[row][col] = "empty";
-      }
-      else if (Math.random() < 0.3) {
-        map[row][col] = "destructible-wall";
-      } else {
-        map[row][col] = "empty";
-      }
-    }
-  }
-  return map;
 }

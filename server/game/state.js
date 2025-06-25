@@ -1,4 +1,3 @@
-import { getState } from "../../framework/state.js";
 import { broadcast } from "../server.js";
 
 const players = new Map();
@@ -9,8 +8,8 @@ const gameState = {
   players: {}, // key = playerId
   map: {
     // Game map configuration
-    width: 15,
-    height: 13,
+    width: 0,
+    height: 0,
     tiles: [], // 2D array of 'empty' | 'wall' | 'block'
     powerUps: [], // [{x, y, type}]
   },
@@ -52,6 +51,15 @@ function addPlayer(client) {
 
 function removePlayer(id) {
   players.delete(id);
+}
+
+export function deActivePlayer(id) {
+  const player = players.get(id);
+  if (!player) return;
+  player.alive = false;
+  player.position = null; // Remove position if player is deactivated
+  lives = 0; // Reset lives
+  broadcast({ type: "playerDeactivated", nickname: player.nickname });
 }
 
 function looseLife(id) {
@@ -97,7 +105,7 @@ function startCountdown() {
   let countdown = 10;
 
   // Generate the map when countdown starts
-  gameState.map.tiles = generateGameMap();
+  gameState.map = generateGameMap();
 
   broadcast({ type: "readyTimer", countdown });
 
@@ -118,37 +126,42 @@ function startGame() {
   // Send the map to clients
   broadcast({
     type: "gameStarted",
-    map: gameState.map.tiles,
+    map: gameState.map,
     players: Array.from(players.values()),
   });
 }
 
 // Add the generateGameMap function here too
 function generateGameMap() {
-  const rows = 13;
-  const cols = 15;
-  const map = [];
+  const tiles = [];
+  const width = 15;
+  const height = 13;
 
-  for (let row = 0; row < rows; row++) {
-    map[row] = [];
-    for (let col = 0; col < cols; col++) {
-      if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
-        map[row][col] = "wall";
+  for (let row = 0; row < height; row++) {
+    tiles[row] = [];
+    for (let col = 0; col < width; col++) {
+      if (row === 0 || row === height - 1 || col === 0 || col === width - 1) {
+        tiles[row][col] = "wall";
       } else if (row % 2 === 0 && col % 2 === 0) {
-        map[row][col] = "wall";
+        tiles[row][col] = "wall";
       } else if (
         (row <= 2 && col <= 2) ||
-        (row <= 2 && col >= cols - 3) ||
-        (row >= rows - 3 && col <= 2) ||
-        (row >= rows - 3 && col >= cols - 3)
+        (row <= 2 && col >= width - 3) ||
+        (row >= height - 3 && col <= 2) ||
+        (row >= height - 3 && col >= width - 3)
       ) {
-        map[row][col] = "empty";
+        tiles[row][col] = "empty";
       } else if (Math.random() < 0.3) {
-        map[row][col] = "destructible-wall";
+        tiles[row][col] = "destructible-wall";
       } else {
-        map[row][col] = "empty";
+        tiles[row][col] = "empty";
       }
     }
   }
-  return map;
+  return {
+    width,
+    height,
+    tiles,
+    powerUps: [],
+  };
 }
