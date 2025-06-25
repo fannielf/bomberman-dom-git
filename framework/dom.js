@@ -97,7 +97,9 @@ function isStyle(key, value) {
 // patchChildren function to update the children of a DOM element
 // It handles adding, updating, and removing child nodes based on the new virtual node structure.
 function patchChildren(parent, oldChildren = [], newChildren = []) {
-  const oldChildNodes = Array.from(parent.childNodes);
+  const oldChildNodes = oldChildren.map(c =>
+    typeof c === 'object' && c !== null && 'el' in c ? c.el : createElement(c)
+  );
   
   const isKeyed = newChildren.some(c => c?.key != null);
 

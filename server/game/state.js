@@ -1,7 +1,7 @@
-import { getState } from "../../framework/state.js";
 import { broadcast } from "../server.js";
 
 const players = new Map();
+const playerPositions = [];
 let readyTimer = null;
 
 const gameState = {
@@ -9,8 +9,8 @@ const gameState = {
   players: {}, // key = playerId
   map: {
     // Game map configuration
-    width: 15,
-    height: 13,
+    width: 0,
+    height: 0,
     tiles: [], // 2D array of 'empty' | 'wall' | 'block'
     powerUps: [], // [{x, y, type}]
   },
@@ -18,14 +18,6 @@ const gameState = {
   explosions: [],
   lastUpdate: Date.now(),
 };
-
-// can be calculated from the grid if we don't want to hard code positions
-const playerPositions = [
-  { x: 1, y: 1 }, // Top-left
-  { x: 13, y: 11 }, // Bottom-right
-  { x: 13, y: 1 }, // Top-right
-  { x: 1, y: 11 }, // Bottom-left
-];
 
 // adding a player to the game
 function addPlayer(client) {
@@ -40,6 +32,7 @@ function addPlayer(client) {
   const position = playerPositions[positionIndex];
 
   players.set(client.id, {
+    id: client.id,
     nickname: client.nickname,
     lives: 3,
     alive: true,
@@ -52,6 +45,25 @@ function addPlayer(client) {
 
 function removePlayer(id) {
   players.delete(id);
+}
+
+export function deActivePlayer(id) {
+  const player = players.get(id);
+  if (!player) return;
+  player.alive = false;
+  player.position = null; // Remove position if player is deactivated
+  lives = 0; // Reset lives
+  broadcast({ type: "playerDeactivated", nickname: player.nickname });
+  removePlayer(id); // Remove player from the game
+  if (players.size === 1) {
+    // If only one player left, end the game
+    const winner = Array.from(players.values())[0];
+    gameState.status = "ended";
+    broadcast({
+      type: "gameEnded",
+      winner: winner.nickname,
+    });
+  }
 }
 
 function looseLife(id) {
@@ -78,6 +90,60 @@ function updatePlayerPosition(id, position) {
   return false;
 }
 
+function handlePlayerMove(id, direction) {
+  const player = players.get(id);
+  if (!player || !player.alive) return;
+
+  const { position } = player;
+  const newPosition = { ...position };
+
+  switch (direction) {
+    case "up":
+      newPosition.y -= 1;
+      break;
+    case "down":
+      newPosition.y += 1;
+      break;
+    case "left":
+      newPosition.x -= 1;
+      break;
+    case "right":
+      newPosition.x += 1;
+      break;
+    default:
+      return; // Invalid direction
+  }
+
+  if (isPositionValid(newPosition)) {
+    player.position = newPosition;
+    // Broadcast the move to all clients
+    broadcast({ type: "playerMoved", id, position: newPosition });
+  }
+}
+
+function isPositionValid({ x, y }) {
+  if (!gameState.map.tiles) return false;
+  // Check bounds
+  if (y < 0 || y >= gameState.map.height || x < 0 || x >= gameState.map.width) {
+    return false;
+  }
+
+  // Check for collisions with walls
+  const tile = gameState.map.tiles[y][x];
+  if (tile === "wall" || tile === "destructible-wall") {
+    return false;
+  }
+
+  // Check for collisions with other players
+  for (const p of players.values()) {
+    if (p.alive && p.position && p.position.x === x && p.position.y === y) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export {
   players,
   gameState,
@@ -88,6 +154,7 @@ export {
   updatePlayerPosition,
   playerPositions,
   startCountdown,
+  handlePlayerMove,
 };
 
 // New functions for game management
@@ -97,7 +164,9 @@ function startCountdown() {
   let countdown = 10;
 
   // Generate the map when countdown starts
-  gameState.map.tiles = generateGameMap();
+  gameState.map = generateGameMap();
+  playerPositions.length = 0; // Reset player positions
+  playerPositions.push(...getPlayerPositions(gameState.map.tiles));
 
   broadcast({ type: "readyTimer", countdown });
 
@@ -118,37 +187,64 @@ function startGame() {
   // Send the map to clients
   broadcast({
     type: "gameStarted",
-    map: gameState.map.tiles,
+    map: gameState.map,
     players: Array.from(players.values()),
   });
 }
 
 // Add the generateGameMap function here too
 function generateGameMap() {
-  const rows = 13;
-  const cols = 15;
-  const map = [];
+  const tiles = [];
+  const width = 15;
+  const height = 13;
 
-  for (let row = 0; row < rows; row++) {
-    map[row] = [];
-    for (let col = 0; col < cols; col++) {
-      if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
-        map[row][col] = "wall";
+  for (let row = 0; row < height; row++) {
+    tiles[row] = [];
+    for (let col = 0; col < width; col++) {
+      if (row === 0 || row === height - 1 || col === 0 || col === width - 1) {
+        tiles[row][col] = "wall";
       } else if (row % 2 === 0 && col % 2 === 0) {
-        map[row][col] = "wall";
+        tiles[row][col] = "wall";
       } else if (
         (row <= 2 && col <= 2) ||
-        (row <= 2 && col >= cols - 3) ||
-        (row >= rows - 3 && col <= 2) ||
-        (row >= rows - 3 && col >= cols - 3)
+        (row <= 2 && col >= width - 3) ||
+        (row >= height - 3 && col <= 2) ||
+        (row >= height - 3 && col >= width - 3)
       ) {
-        map[row][col] = "empty";
+        tiles[row][col] = "empty";
       } else if (Math.random() < 0.3) {
-        map[row][col] = "destructible-wall";
+        tiles[row][col] = "destructible-wall";
       } else {
-        map[row][col] = "empty";
+        tiles[row][col] = "empty";
       }
     }
   }
-  return map;
+  return {
+    width,
+    height,
+    tiles,
+    powerUps: [],
+  };
+}
+
+
+function getPlayerPositions(tiles) {
+  const height = tiles.length;
+  const width = tiles[0].length;
+
+  const quadrants = [
+    { xRange: [1, 3], yRange: [1, 3] }, // top-left
+    { xRange: [width - 4, width - 2], yRange: [1, 3] }, // top-right
+    { xRange: [1, 3], yRange: [height - 4, height - 2] }, // bottom-left
+    { xRange: [width - 4, width - 2], yRange: [height - 4, height - 2] }, // bottom-right
+  ];
+
+  return quadrants.map(({ xRange, yRange }) => {
+    for (let y = yRange[0]; y <= yRange[1]; y++) {
+      for (let x = xRange[0]; x <= xRange[1]; x++) {
+        if (tiles[y][x] === "empty") return { x, y };
+      }
+    }
+    return { x: xRange[0], y: yRange[0] }; // fallback if no empty tile found
+  });
 }

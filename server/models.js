@@ -35,14 +35,15 @@ export class PowerUp {
 }
 
 export class GameMap {
-    constructor(width, height) {
+    constructor(width, height, tiles) {
         this.width = width;
         this.height = height;
-        this.tiles = []; // empty, wall, block, powerup, explosion, player
+        this.tiles = tiles; // empty, wall, block, powerup, explosion, player
     }
     isPassable(x, y) {
-        return this.tiles[y]?.[x] === 'empty';
-    }
+    const tile = this.tiles[y]?.[x];
+    return tile === "empty" || tile === "powerup" || tile === "explosion" || tile === "player";
+  }
 
     // if "empty" then it could be empty, powerup, player or explosion.
 }

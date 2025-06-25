@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer, startCountdown } from './game/state.js';
+import { addPlayer, deActivePlayer, startCountdown, handlePlayerMove } from './game/state.js';
 
 const server = new WebSocketServer({ port: 8080 });
 
@@ -20,7 +20,7 @@ export function broadcast(data, exclude=null) {
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
-  console.log('New client connected'); // Log when a new client connects
+
   ws.on('message', msg => {
 
     let data;
@@ -72,6 +72,10 @@ server.on('connection', ws => {
         broadcast({ type: 'chat', nickname: clients.get(id).nickname, message: data.message });
         break;
 
+      case 'move':
+        handlePlayerMove(id, data.direction);
+        break;
+
       case 'gameUpdate': // Handle game state updates
         broadcast({ type: 'gameUpdate', state: data.state }); // Don't send to sender??
         break;
@@ -89,9 +93,9 @@ server.on('connection', ws => {
           ws.send(JSON.stringify({ type: 'error', message: 'Client not found by id' }));
         }
         break;
-      case 'ping':
-        console.log("ping")
-        break;
+      case 'leaveGame':
+        deActivePlayer(id); // Deactivate player
+        clients.delete(id); // Remove client from the map
 
       default: // Handle unknown message types
         ws.send(JSON.stringify({ type: 'error', message: 'Unknown message type' }));
@@ -117,7 +121,7 @@ function sendLobbyUpdate() {
 }
 
 function handleJoin(id, ws, data) {
-  console.log("Handle join triggered:", data)
+
   if (clients.has(id)) { // Prevent re-joining
       ws.send(JSON.stringify({ type: 'playerExists', id: id, nickname: clients.get(id).nickname })); // Notify client of successful join
       return;
@@ -164,41 +168,9 @@ function validateNickname(data) {
 function statusCountdown() {
   startCountdown();
   for (const [id, client] of clients) {
-    addPlayer(id, client.nickname); // Add players to the game state
+    addPlayer({ id, nickname: client.nickname }); // Add players to the game state
   }
   clearInterval(waitTimer);
   waitTimer = null;
   firstJoinTime = null;
-}
-
-function generateGameMap() {
-  const rows = 13;
-  const cols = 15;
-  const map = [];
-
-  for (let row = 0; row < rows; row++) {
-    map[row] = [];
-    for (let col = 0; col < cols; col++) {
-      if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
-        map[row][col] = "wall";
-      }
-      else if (row % 2 === 0 && col % 2 === 0) {
-        map[row][col] = "wall";
-      }
-      else if (
-        (row <= 2 && col <= 2) ||
-        (row <= 2 && col >= cols - 3) ||
-        (row >= rows - 3 && col <= 2) ||
-        (row >= rows - 3 && col >= cols - 3)
-      ) {
-        map[row][col] = "empty";
-      }
-      else if (Math.random() < 0.3) {
-        map[row][col] = "destructible-wall";
-      } else {
-        map[row][col] = "empty";
-      }
-    }
-  }
-  return map;
 }

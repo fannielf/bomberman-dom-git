@@ -1,5 +1,5 @@
 import { render } from "./render.js";
-import { subscribe } from "./state.js";
+import { subscribe, setState } from "./state.js";
 
 const routes = new Map(); // Map to store routes and their render functions
 let rootEl = null; //DOM element where the content will be rendered
@@ -13,12 +13,6 @@ export function initRouter(rootElementId) {
     window.onload = () => {
     handleRouteChange();
   };
-  // window.onload = () => { //clear the hash on initial load
-  //   if (location.hash) {
-  //     history.replaceState(null, "", location.pathname + location.search);
-  //   }
-  //   handleRouteChange();
-  // };
 }
 
 //addRoute function to register a new route
@@ -34,6 +28,9 @@ function handleRouteChange() {
   if (renderFn && rootEl) {
     unsubscribes.forEach(unsub => unsub());
     unsubscribes.length = 0;
+
+    // Clear error messages when navigating to a different route
+    setState({ error: null });
 
     render(renderFn(), rootEl); // Render the virtual node to the root element
 

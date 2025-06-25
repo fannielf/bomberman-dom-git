@@ -20,11 +20,10 @@ function connect() {
         break;
     case 'chat':
         if (window.location.hash === '/') return;
-        console.log("chat message received:", msg.nickname, msg.message)
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
     case 'startGame':
-        window.location = 'game.html';
+        window.location.hash = '/game'; // Redirect to game page
         break;
     case 'error':
         if (msg.message === 'Client not found by id') {
@@ -38,11 +37,9 @@ function connect() {
         emit('updatePlayerCount', {count: msg.count, players: msg.players, gameFull: msg.gameFull});
         break;
     case 'playerJoined':
-        console.log("playerJoined message received:", msg.nickname)
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });
         break;
     case 'reconnected':
-        console.log("reconnected message received:", msg.nickname)
     case 'lobbyReset':
         localStorage.removeItem('user'); // Remove user from local storage
         window.location.hash = '/'; // Redirect to index page
@@ -51,15 +48,12 @@ function connect() {
         emit('gameStarted', { map: msg.map, players: msg.players });
         window.location.hash = '/game';
         break;
+    case 'playerMoved':
+        emit('playerMoved', { id: msg.id, position: msg.position });
+        break;
     }
         
     })
-
-//     setInterval(() => {
-//     if (socket.readyState === WebSocket.OPEN) {
-//         socket.send(JSON.stringify({ type: 'ping' }));
-//     }
-// }, 20000); // every 20 seconds
 
 }
 connect();
