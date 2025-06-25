@@ -33,6 +33,7 @@ export function createElement(vnode) {
 // patch function to update the DOM based on changes in the virtual node structure
 // patch is only called if there is an oldVnode
 export function patch(el, oldVnode, newVnode) {
+  console.log('Patching element')
 
   // newVnode is null/undefined (node should be removed)
   if (newVnode === undefined || newVnode === null) {
@@ -97,7 +98,9 @@ function isStyle(key, value) {
 // patchChildren function to update the children of a DOM element
 // It handles adding, updating, and removing child nodes based on the new virtual node structure.
 function patchChildren(parent, oldChildren = [], newChildren = []) {
-  const oldChildNodes = Array.from(parent.childNodes);
+  const oldChildNodes = oldChildren.map(c =>
+    typeof c === 'object' && c !== null && 'el' in c ? c.el : createElement(c)
+  );
   
   const isKeyed = newChildren.some(c => c?.key != null);
 

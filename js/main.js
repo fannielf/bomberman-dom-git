@@ -1,12 +1,6 @@
 import { sendMessage } from "./ws.js";
 import { on, setState, getState, subscribe, render} from "../framework/index.js"
 
-
-setState({
-  error: '',
-  gameFull: false
-})
-
 export function Main() {
   const { nickname, gameFull, error} = getState();
 

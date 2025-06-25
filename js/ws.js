@@ -24,7 +24,7 @@ function connect() {
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
     case 'startGame':
-        window.location = 'game.html';
+        window.location.hash = '/game'; // Redirect to game page
         break;
     case 'error':
         if (msg.message === 'Client not found by id') {

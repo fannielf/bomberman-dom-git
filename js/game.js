@@ -1,4 +1,5 @@
 import { sendMessage } from "./ws.js";
+import { Chat } from "./chat.js";
 import { setState, getState, on } from "../framework/index.js";
 
 setState({
@@ -40,35 +41,18 @@ export function Game() {
         attrs: {
           onclick: () => {
             sendMessage({ type: "leaveGame", id: playerID });
+            localStorage.removeItem("user");
             window.location.hash = "/";
           },
         },
         children: ["Leave Game"],
       },
       {
-        tag: "div",
-        attrs: { id: "chat" },
-        children: [],
-      },
-      {
-        tag: "input",
-        attrs: {
-          id: "chat-input",
-          placeholder: "Type message...",
-        },
-      },
-      {
-        tag: "button",
-        attrs: {
-          onclick: () => {
-            const message = document.getElementById("chat-input").value.trim();
-            if (message) {
-              sendMessage({ type: "chat", id: playerID, nickname, message });
-              document.getElementById("chat-input").value = "";
-            }
-          },
-        },
-        children: ["Send"],
+        tag: 'div',
+        attrs: {},
+        children: [
+          Chat({ playerID, nickname }) // Include Chat component
+        ]
       },
     ],
   };
@@ -76,10 +60,13 @@ export function Game() {
 
 function renderGameBoard(map) {
   const cells = [];
-  for (let row = 0; row < 13; row++) {
-    for (let col = 0; col < 15; col++) {
+  const rowLength = map.height || 13; // Default height
+  const colLength = map.width || 15; // Default width
+
+  for (let row = 0; row < rowLength; row++) {
+    for (let col = 0; col < colLength; col++) {
       let cellClass = "cell";
-      const cellType = map[row] && map[row][col];
+      const cellType = map.tiles[row][col];
       
       if (cellType === "wall") {
         cellClass += " wall";
