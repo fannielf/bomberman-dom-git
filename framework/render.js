@@ -5,12 +5,10 @@ let oldVnode = null;  // stores last vnode
 
 // Render
 export function render(newVNode, appRoot) {
-  console.log('Rendering new VNode:', newVNode);
 
 if (!newVNode) return;
 
 if (!oldVnode) { // Initial render
-  console.log('Initial render with new VNode:', newVNode);
     rootDom = createElement(newVNode);
     newVNode.el = rootDom; // Store the created element in the vnode
     appRoot.appendChild(rootDom);

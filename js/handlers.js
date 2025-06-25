@@ -18,7 +18,6 @@ on('updatePlayerCount', ({count, players, gameFull}) => {
 })
 
 on('playerJoined', ({id, nickname}) => {
-    console.log("Player joined:", id, nickname);
   localStorage.setItem('user', JSON.stringify({ id, nickname }));
   window.location.hash = '/lobby';
   sendMessage({ type: 'lobby', id });

@@ -20,7 +20,7 @@ export function broadcast(data, exclude=null) {
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
-  console.log('New client connected'); // Log when a new client connects
+
   ws.on('message', msg => {
 
     let data;
@@ -91,9 +91,6 @@ server.on('connection', ws => {
         } else {
           ws.send(JSON.stringify({ type: 'error', message: 'Client not found by id' }));
         }
-        break;
-      case 'ping':
-        console.log("ping")
         break;
       case 'leaveGame':
         deActivePlayer(id); // Deactivate player

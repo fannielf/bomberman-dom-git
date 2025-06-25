@@ -33,7 +33,6 @@ export function createElement(vnode) {
 // patch function to update the DOM based on changes in the virtual node structure
 // patch is only called if there is an oldVnode
 export function patch(el, oldVnode, newVnode) {
-  console.log('Patching element')
 
   // newVnode is null/undefined (node should be removed)
   if (newVnode === undefined || newVnode === null) {

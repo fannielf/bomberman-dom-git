@@ -20,7 +20,6 @@ function connect() {
         break;
     case 'chat':
         if (window.location.hash === '/') return;
-        console.log("chat message received:", msg.nickname, msg.message)
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
     case 'startGame':
@@ -38,11 +37,9 @@ function connect() {
         emit('updatePlayerCount', {count: msg.count, players: msg.players, gameFull: msg.gameFull});
         break;
     case 'playerJoined':
-        console.log("playerJoined message received:", msg.nickname)
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });
         break;
     case 'reconnected':
-        console.log("reconnected message received:", msg.nickname)
     case 'lobbyReset':
         localStorage.removeItem('user'); // Remove user from local storage
         window.location.hash = '/'; // Redirect to index page
@@ -52,11 +49,9 @@ function connect() {
         window.location.hash = '/game';
         break;
     case 'playerDeactivated':
-        console.log("playerDeactivated message received:", msg.nickname)
         emit('playerDeactivated', { id: msg.id, nickname: msg.nickname });
         break;
     case 'gameEnded':
-        console.log("gameEnded message received:", msg.winner)
         emit('gameEnded', { winner: msg.winner });
     case 'gameReset':
         localStorage.removeItem('user'); // Remove user from local storage
