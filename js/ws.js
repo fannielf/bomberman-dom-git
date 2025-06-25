@@ -48,14 +48,8 @@ function connect() {
         emit('gameStarted', { map: msg.map, players: msg.players });
         window.location.hash = '/game';
         break;
-    case 'playerDeactivated':
-        emit('playerDeactivated', { id: msg.id, nickname: msg.nickname });
-        break;
-    case 'gameEnded':
-        emit('gameEnded', { winner: msg.winner });
-    case 'gameReset':
-        localStorage.removeItem('user'); // Remove user from local storage
-        window.location.hash = '/'; // Redirect to index page
+    case 'playerMoved':
+        emit('playerMoved', { id: msg.id, position: msg.position });
         break;
     }
         

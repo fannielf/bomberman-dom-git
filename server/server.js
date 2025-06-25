@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer, deActivePlayer, startCountdown } from './game/state.js';
+import { addPlayer, deActivePlayer, startCountdown, handlePlayerMove } from './game/state.js';
 
 const server = new WebSocketServer({ port: 8080 });
 
@@ -73,6 +73,10 @@ server.on('connection', ws => {
 
       case 'chat': // Handle chat messages
         broadcast({ type: 'chat', nickname: clients.get(id).nickname, message: data.message });
+        break;
+
+      case 'move':
+        handlePlayerMove(id, data.direction);
         break;
 
       case 'gameUpdate': // Handle game state updates
@@ -167,7 +171,7 @@ function validateNickname(data) {
 function statusCountdown() {
   startCountdown();
   for (const [id, client] of clients) {
-    addPlayer(id, client.nickname); // Add players to the game state
+    addPlayer({ id, nickname: client.nickname }); // Add players to the game state
   }
   clearInterval(waitTimer);
   waitTimer = null;
