@@ -1,5 +1,5 @@
 import { render } from "./render.js";
-import { subscribe } from "./state.js";
+import { subscribe, setState } from "./state.js";
 
 const routes = new Map(); // Map to store routes and their render functions
 let rootEl = null; //DOM element where the content will be rendered
@@ -28,6 +28,9 @@ function handleRouteChange() {
   if (renderFn && rootEl) {
     unsubscribes.forEach(unsub => unsub());
     unsubscribes.length = 0;
+
+    // Clear error messages when navigating to a different route
+    setState({ error: null });
 
     render(renderFn(), rootEl); // Render the virtual node to the root element
 
