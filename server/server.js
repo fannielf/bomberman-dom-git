@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer, deActivePlayer, startCountdown, handlePlayerMove } from './game/state.js';
+import { addPlayer, deActivePlayer, startCountdown, handlePlayerMove, handlePlaceBomb } from './game/state.js';
 
 const server = new WebSocketServer({ port: 8080 });
 
@@ -74,6 +74,10 @@ server.on('connection', ws => {
 
       case 'move':
         handlePlayerMove(id, data.direction);
+        break;
+
+      case 'placeBomb':
+        handlePlaceBomb(id);
         break;
 
       case 'gameUpdate': // Handle game state updates

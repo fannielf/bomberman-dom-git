@@ -78,6 +78,112 @@ function looseLife(id) {
   }
 }
 
+function handlePlaceBomb(playerId) {
+  const player = players.get(playerId);
+  if (!player || !player.alive) return;
+
+  // Check if player has an active bomb already
+  const activeBombs = gameState.bombs.filter(
+    (b) => b.ownerId === playerId
+  ).length;
+  if (activeBombs >= player.bombCount) {
+    return;
+  }
+
+  // Prevent placing a bomb on a tile that already has one
+  const isBombPresent = gameState.bombs.some(
+    (b) =>
+      b.position.x === player.position.x && b.position.y === player.position.y
+  );
+  if (isBombPresent) {
+    return;
+  }
+
+  const bomb = {
+    id: crypto.randomUUID(),
+    ownerId: playerId,
+    position: { ...player.position },
+    timer: 3000, // 3 seconds
+    range: player.bombRange,
+  };
+
+  gameState.bombs.push(bomb);
+  broadcast({ type: "bombPlaced", bomb });
+
+  // Schedule the explosion
+  setTimeout(() => {
+    explodeBomb(bomb.id);
+  }, bomb.timer);
+}
+
+function explodeBomb(bombId) {
+  const bombIndex = gameState.bombs.findIndex((b) => b.id === bombId);
+  if (bombIndex === -1) return;
+
+  const [bomb] = gameState.bombs.splice(bombIndex, 1);
+  const explosionTiles = new Set();
+  const directions = [
+    { x: 0, y: 0 }, // center
+    { x: 1, y: 0 }, // right
+    { x: -1, y: 0 }, // left
+    { x: 0, y: 1 }, // down
+    { x: 0, y: -1 }, // up
+  ];
+
+  explosionTiles.add(`${bomb.position.x},${bomb.position.y}`);
+
+  // Calculate explosion in each direction
+  for (const dir of directions.slice(1)) {
+    const x = bomb.position.x + dir.x;
+    const y = bomb.position.y + dir.y;
+
+    if (
+      y < 0 ||
+      y >= gameState.map.height ||
+      x < 0 ||
+      x >= gameState.map.width
+    )
+      continue;
+
+    const tile = gameState.map.tiles[y][x];
+    if (tile === "wall") continue;
+
+    explosionTiles.add(`${x},${y}`);
+
+    if (tile === "destructible-wall") {
+      gameState.map.tiles[y][x] = "empty";
+    }
+  }
+
+  const explosion = {
+    id: crypto.randomUUID(),
+    tiles: Array.from(explosionTiles).map((t) => {
+      const [x, y] = t.split(",").map(Number);
+      return { x, y };
+    }),
+  };
+
+  gameState.explosions.push(explosion);
+
+  broadcast({
+    type: "explosion",
+    bombId: bomb.id,
+    explosion,
+    updatedMap: gameState.map,
+  });
+
+  // Remove the explosion visual after a short time
+  setTimeout(() => {
+    const explosionIndex = gameState.explosions.findIndex(
+      (e) => e.id === explosion.id
+    );
+    if (explosionIndex !== -1) {
+      gameState.explosions.splice(explosionIndex, 1);
+      broadcast({ type: "explosionEnded", explosionId: explosion.id });
+    }
+  }, 500);
+}
+
 function getPlayerState(id) {
   return players.get(id);
 }
@@ -155,6 +261,7 @@ export {
   playerPositions,
   startCountdown,
   handlePlayerMove,
+  handlePlaceBomb,
 };
 
 // New functions for game management
@@ -166,7 +273,7 @@ function startCountdown() {
   // Generate the map when countdown starts
   gameState.map = generateGameMap();
   playerPositions.length = 0; // Reset player positions
-  playerPositions.push(...getPlayerPositions(gameState.map.tiles));
+  playerPositions.push(...getPlayerPositions());
 
   broadcast({ type: "readyTimer", countdown });
 
@@ -201,10 +308,11 @@ function generateGameMap() {
   for (let row = 0; row < height; row++) {
     tiles[row] = [];
     for (let col = 0; col < width; col++) {
+      // The order of these checks is important.
+      // 1. Set outer walls.
       if (row === 0 || row === height - 1 || col === 0 || col === width - 1) {
         tiles[row][col] = "wall";
-      } else if (row % 2 === 0 && col % 2 === 0) {
-        tiles[row][col] = "wall";
+      // 2. Clear spawn corners. This must happen before pillar or destructible walls are placed.
       } else if (
         (row <= 2 && col <= 2) ||
         (row <= 2 && col >= width - 3) ||
@@ -212,8 +320,13 @@ function generateGameMap() {
         (row >= height - 3 && col >= width - 3)
       ) {
         tiles[row][col] = "empty";
+      // 3. Set inner "pillar" walls.
+      } else if (row % 2 === 0 && col % 2 === 0) {
+        tiles[row][col] = "wall";
+      // 4. Place random destructible walls.
       } else if (Math.random() < 0.3) {
         tiles[row][col] = "destructible-wall";
+      // 5. Fill the rest with empty space.
       } else {
         tiles[row][col] = "empty";
       }
@@ -228,23 +341,17 @@ function generateGameMap() {
 }
 
 
-function getPlayerPositions(tiles) {
-  const height = tiles.length;
-  const width = tiles[0].length;
+function getPlayerPositions() {
+  const width = 15;
+  const height = 13;
 
-  const quadrants = [
-    { xRange: [1, 3], yRange: [1, 3] }, // top-left
-    { xRange: [width - 4, width - 2], yRange: [1, 3] }, // top-right
-    { xRange: [1, 3], yRange: [height - 4, height - 2] }, // bottom-left
-    { xRange: [width - 4, width - 2], yRange: [height - 4, height - 2] }, // bottom-right
+  // Define the exact corner positions for each player.
+  const positions = [
+    { x: 1, y: 1 }, // Player 1: Top-Left
+    { x: width - 2, y: 1 }, // Player 2: Top-Right
+    { x: 1, y: height - 2 }, // Player 3: Bottom-Left
+    { x: width - 2, y: height - 2 }, // Player 4: Bottom-Right
   ];
 
-  return quadrants.map(({ xRange, yRange }) => {
-    for (let y = yRange[0]; y <= yRange[1]; y++) {
-      for (let x = xRange[0]; x <= xRange[1]; x++) {
-        if (tiles[y][x] === "empty") return { x, y };
-      }
-    }
-    return { x: xRange[0], y: yRange[0] }; // fallback if no empty tile found
-  });
+  return positions;
 }
