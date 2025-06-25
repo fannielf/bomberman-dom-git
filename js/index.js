@@ -20,4 +20,6 @@ setState({
   chatMessages: [],
   gameInfo: '',
   map: null,
+  bombs: [],
+  explosions: [],
 });

@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer, deActivePlayer, startCountdown, handlePlayerMove } from './game/state.js';
+import { addPlayer, deActivePlayer, startCountdown, handlePlayerMove, handlePlaceBomb } from './game/state.js';
 
 const server = new WebSocketServer({ port: 8080 });
 
@@ -24,15 +24,12 @@ server.on('connection', ws => {
   ws.on('message', msg => {
 
     let data;
-    try {
-      data = JSON.parse(msg); // Parse incoming message as JSON
-      console.log('Parsed data:', data); // Log parsed data
-    } catch {
-      ws.send(JSON.stringify({ type: 'error', message: 'Invalid JSON format' })); // Handle JSON parsing errors
+    try { data = JSON.parse(msg) } catch {
+      ws.send(JSON.stringify({ type:'error', message:'Invalid JSON' }));
       return;
     }
 
-    let id = data.id || null;
+    let id = data.id ?? null;
 
     if (data.type !== 'join' && data.type !== 'ping' && id === null) { // Check if id is provided for non-join messages
       ws.send(JSON.stringify({ type: 'error', message: 'Missing playerID' }));
@@ -77,6 +74,10 @@ server.on('connection', ws => {
 
       case 'move':
         handlePlayerMove(id, data.direction);
+        break;
+
+      case 'placeBomb':
+        handlePlaceBomb(id);
         break;
 
       case 'gameUpdate': // Handle game state updates

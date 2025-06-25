@@ -42,3 +42,26 @@
     left: 1px;
     z-index: 10;
 }
+
+.bomb {
+    width: 20px;
+    height: 20px;
+    background-image: url('../assets/bomb.png'); /* your image path here */
+    background-size: cover;
+    background-position: center;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    z-index: 10;
+}
+
+.explosion {
+    background-color: rgba(255, 0, 0, 0.5);
+    width: 25px;
+    height: 25px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    animation: explosion-animation 0.5s forwards;
+}
