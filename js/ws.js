@@ -51,6 +51,18 @@ function connect() {
     case 'playerMoved':
         emit('playerMoved', { id: msg.id, position: msg.position });
         break;
+    case 'bombPlaced':
+        emit('bombPlaced', { bomb: msg.bomb });
+        break;
+    case 'explosion':
+        emit('explosion', { bombId: msg.bombId, explosion: msg.explosion, updatedMap: msg.updatedMap });
+        break;
+    case 'explosionEnded':
+        emit('explosionEnded', { explosionId: msg.explosionId });
+        break;
+    case 'playerUpdate':
+        emit('playerUpdate', { player: msg.player });
+        break;
     }
         
     })

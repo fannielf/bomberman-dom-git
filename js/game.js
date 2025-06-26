@@ -2,6 +2,14 @@ import { sendMessage } from "./ws.js";
 import { Chat } from "./chat.js";
 import { setState, getState, on } from "../framework/index.js";
 
+setState({
+  gameInfo: "",
+  map: null,
+  players: [],
+  bombs: [],
+  explosions: [],
+});
+
 // game loop and input handling logic
 let gameLoopActive = false;
 const keysPressed = new Set();
@@ -10,8 +18,15 @@ const MOVE_INTERVAL = 100; // move every 100ms
 
 function handleKeyDown(e) {
   // Prevent default browser actions for arrow keys
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
     e.preventDefault();
+  }
+  if (e.key === " ") {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+      sendMessage({ type: "placeBomb", id: user.id });
+    }
+    return; // Don't add space to keysPressed
   }
   keysPressed.add(e.key.toLowerCase());
 }
@@ -76,7 +91,7 @@ export function Game() {
 
   const nickname = user.nickname;
   const playerID = user.id;
-  const { gameInfo, map, players } = getState();
+  const { gameInfo, map, players, bombs, explosions } = getState();
 
   return {
     tag: "div",
@@ -88,7 +103,7 @@ export function Game() {
       {
         tag: "div",
         attrs: { id: "game-board" },
-        children: map ? renderGameBoard(map, players) : [],
+        children: map ? renderGameBoard(map, players, bombs, explosions) : [],
       },
       {
         tag: "p",
@@ -118,7 +133,7 @@ export function Game() {
   };
 }
 
-function renderGameBoard(map, players) {
+function renderGameBoard(map, players, bombs, explosions) {
   const cells = [];
   const rowLength = map.height || 13; // Default height
   const colLength = map.width || 15; // Default width
@@ -164,6 +179,38 @@ function renderGameBoard(map, players) {
     });
   }
 
+  // Render bombs
+  if (bombs) {
+    bombs.forEach((bomb) => {
+      const { x, y } = bomb.position;
+      const bombIndex = y * colLength + x;
+      if (cells[bombIndex]) {
+        cells[bombIndex].children.push({
+          tag: "div",
+          attrs: { className: "bomb" },
+          children: [],
+        });
+      }
+    });
+  }
+
+  // Render explosions
+  if (explosions) {
+    explosions.forEach((explosion) => {
+      explosion.tiles.forEach((tile) => {
+        const { x, y } = tile;
+        const explosionIndex = y * colLength + x;
+        if (cells[explosionIndex]) {
+          cells[explosionIndex].children.push({
+            tag: "div",
+            attrs: { className: "explosion" },
+            children: [],
+          });
+        }
+      });
+    });
+  }
+
   return cells;
 }
 
@@ -181,6 +228,41 @@ on("playerMoved", ({ id, position }) => {
   const newPlayers = players.map((p) => {
     if (p.id === id) {
       return { ...p, position };
+    }
+    return p;
+  });
+  setState({ players: newPlayers });
+});
+
+// Handle bomb placement
+on("bombPlaced", ({ bomb }) => {
+  const { bombs } = getState();
+  setState({ bombs: [...bombs, bomb] });
+});
+
+// Handle explosion
+on("explosion", ({ bombId, explosion, updatedMap }) => {
+  const { bombs, explosions } = getState();
+  // Remove the exploded bomb by its ID
+  const newBombs = bombs.filter((b) => b.id !== bombId);
+  // Add the new explosion
+  const newExplosions = [...explosions, explosion];
+  setState({ bombs: newBombs, explosions: newExplosions, map: updatedMap });
+});
+
+// Handle explosion end
+on("explosionEnded", ({ explosionId }) => {
+  const { explosions } = getState();
+  const newExplosions = explosions.filter((e) => e.id !== explosionId);
+  setState({ explosions: newExplosions });
+});
+
+// Handle player updates (e.g., losing a life)
+on("playerUpdate", ({ player }) => {
+  const { players } = getState();
+  const newPlayers = players.map((p) => {
+    if (p.id === player.id) {
+      return { ...p, ...player }; // Merge updates
     }
     return p;
   });
