@@ -43,7 +43,7 @@ server.on('connection', ws => {
     switch (data.type) {
       case 'join': // Join a game with a nickname
         handleJoin(id, ws, data);
-        if (clients.size === 1 && !waitTimer) {
+        if (clients.size === 2 && !waitTimer) {
           firstJoinTime = Date.now(); // Record the time of the first join
           waitTimer = setInterval(() => {
             if (clients.size === 0) {
