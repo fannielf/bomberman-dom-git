@@ -6,8 +6,8 @@ export function Main() {
 
 return {
   tag: 'div',
-  attrs: {},
   key: 'main-root',
+  attrs: {},
   children: [
     {
       tag: 'input',

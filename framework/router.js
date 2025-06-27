@@ -10,9 +10,7 @@ export function initRouter(rootElementId) {
   rootEl = document.getElementById(rootElementId); //find the root element by ID
 
   window.onhashchange = handleRouteChange; // Handle initial load and hash changes
-    window.onload = () => {
-    handleRouteChange();
-  };
+  window.onload = handleRouteChange; // Handle initial load
 }
 
 //addRoute function to register a new route

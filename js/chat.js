@@ -1,7 +1,7 @@
 import { sendMessage } from "./ws.js";
 import { on, setState, getState } from "../framework/index.js";
 
-export function Chat({ playerID, nickname }) {
+export function Chat({ playerID, nickname } = {}) {
   const { chatMessages } = getState();
 
   return {

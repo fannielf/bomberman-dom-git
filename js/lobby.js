@@ -22,6 +22,7 @@ export function Lobby() {
 
   return {
     tag: 'div',
+    key: 'lobby-root',
     attrs: {},
     children: [
       {
@@ -62,7 +63,7 @@ export function Lobby() {
       },
       {
         tag: 'div',
-        attrs: {},
+        attrs: { id: 'chat-container', class: 'chat-container' },
         key: 'chat-container',
         children: [
           Chat({ playerID, nickname }) // Include Chat component

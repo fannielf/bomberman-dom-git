@@ -1,19 +1,35 @@
 import { createElement, patch } from './dom.js';
 
-let rootDom = null; // the actual DOM root created from vnode
-let oldVnode = null;  // stores last vnode
+const screenMap = new Map(); // screenName -> { vnode, dom }
+let currentScreen = null;
 
 // Render
 export function render(newVNode, appRoot) {
 
 if (!newVNode) return;
 
-if (!oldVnode) { // Initial render
-    rootDom = createElement(newVNode);
-    newVNode.el = rootDom; // Store the created element in the vnode
-    appRoot.appendChild(rootDom);
-  } else { // Update render
-    rootDom = patch(rootDom, oldVnode, newVNode);
+const screenKey = newVNode.key || newVNode.tag || 'Unknown';
+
+// If we're switching to a new screen, remove current DOM and save it
+if (currentScreen && currentScreen !== screenKey) {
+  const current = screenMap.get(currentScreen);
+  if (current && current.dom && appRoot.contains(current.dom)) {
+    appRoot.removeChild(current.dom);
   }
-  oldVnode = newVNode; // Update oldVnode for next render
+}
+
+const saved = screenMap.get(screenKey);
+let dom;
+
+if (!saved) { // Initial render
+  console.log('Initial render');
+    dom = createElement(newVNode);
+  } else { // Update render
+    console.log('Pathing new VNode');
+    dom = patch(saved.dom, saved.vnode, newVNode);
+  }
+  newVNode.el = dom; // Store the created element in the vnode
+  screenMap.set(screenKey, { vnode: newVNode, dom });
+  appRoot.appendChild(dom);
+  currentScreen = screenKey; // Update current screen
 }
