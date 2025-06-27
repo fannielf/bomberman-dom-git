@@ -155,6 +155,22 @@ function explodeBomb(bombId) {
     }
   }
 
+  // Check for players in explosion tiles
+    for (const player of players.values()) {
+    if (!player.alive || !player.position) continue;
+    const key = `${player.position.x},${player.position.y}`;
+    if (explosionTiles.has(key)) {
+      player.lives--;
+      if (player.lives <= 0) {
+        player.alive = false;
+        player.position = null;
+        broadcast({ type: "playerEliminated", nickname: player.nickname, id: player.id });
+      } else {
+        broadcast({ type: "playerUpdate", player: { id: player.id, lives: player.lives } });
+      }
+    }
+  }
+
   const explosion = {
     id: crypto.randomUUID(),
     tiles: Array.from(explosionTiles).map((t) => {

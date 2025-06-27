@@ -2,12 +2,16 @@ import { sendMessage } from "./ws.js";
 import { Chat } from "./chat.js";
 import { setState, getState, on } from "../framework/index.js";
 
+window.setState = setState; //for testing purposes, remove later
+window.getState = getState; //for testing purposes, remove later
+
 setState({
   gameInfo: "",
   map: null,
   players: [],
   bombs: [],
   explosions: [],
+  gameEnded: false,
 });
 
 // game loop and input handling logic
@@ -91,7 +95,7 @@ export function Game() {
 
   const nickname = user.nickname;
   const playerID = user.id;
-  const { gameInfo, map, players, bombs, explosions } = getState();
+  const { gameInfo, map, players, bombs, explosions, gameEnded } = getState();
 
   return {
     tag: "div",
@@ -102,6 +106,20 @@ export function Game() {
       },
       {
         tag: "div",
+        attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
+        children: (players || []).map(p => ({
+          tag: "span",
+          attrs: {
+            style: `margin-right: 16px; color: ${p.alive ? "black" : "gray"}; font-weight: bold;`
+          },
+          children: [
+            `${p.nickname}: ${p.lives ?? 0} ❤️`
+          ]
+        }))
+      },
+
+      {
+        tag: "div",
         attrs: { id: "game-board" },
         children: map ? renderGameBoard(map, players, bombs, explosions) : [],
       },
@@ -109,6 +127,28 @@ export function Game() {
         tag: "p",
         attrs: { id: "game-info" },
         children: [gameInfo || `Good luck, ${nickname}!`],
+      },
+      gameEnded && {
+        tag: "div",
+        attrs: {
+          style: `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #333;
+            padding: 32px;
+            z-index: 1000;
+            font-size: 2em;
+            text-align: center;
+          `
+        },
+        children: [
+          gameInfo,
+          { tag: "br" },
+          { tag: "button", attrs: { onclick: () => window.location.hash = "/" }, children: ["Back to Menu"] }
+        ]
       },
       {
         tag: "button",
@@ -127,6 +167,7 @@ export function Game() {
         attrs: {},
         children: [
           Chat({ playerID, nickname }) // Include Chat component
+          //Chat({ playerID: user.id, nickname: user.nickname })
         ]
       },
     ],
@@ -268,3 +309,10 @@ on("playerUpdate", ({ player }) => {
   });
   setState({ players: newPlayers });
 });
+
+// Handle game end
+on("gameEnded", ({ winner }) => {
+  setState({ gameInfo: `Game Over! Winner: ${winner}`, gameEnded: true });
+});
+
+
