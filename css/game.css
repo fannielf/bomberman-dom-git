@@ -1,15 +1,15 @@
 #game-board {
     display: grid;
-    grid-template-columns: repeat(15, 25px);
-    grid-template-rows: repeat(13, 25px);
+    grid-template-columns: repeat(15, 60px);
+    grid-template-rows: repeat(13, 60px);
     gap: 1px;
     margin: 20px auto;
     width: fit-content;
 }
 
 .cell {
-    width: 25px;
-    height: 25px;
+    width: 60px;
+    height: 60px;
     background-color: #90EE90;
     border: 1px solid #228B22;
     position: relative;
@@ -30,9 +30,9 @@
 }
 
 .player {
-    width: 20px;
-    height: 20px;
-    background-image: url('../assets/player.png'); /* your image path here */
+    width: 60px;
+    height: 60px;
+    /* background-image: url('../assets/player.png');  */
     background-size: cover;
     background-position: center;
     border: none; /* remove border if not needed */
@@ -44,8 +44,8 @@
 }
 
 .bomb {
-    width: 20px;
-    height: 20px;
+    width: 60px;
+    height: 60px;
     background-image: url('../assets/bomb.png'); /* your image path here */
     background-size: cover;
     background-position: center;
@@ -57,8 +57,8 @@
 
 .explosion {
     background-color: rgba(255, 0, 0, 0.5);
-    width: 25px;
-    height: 25px;
+    width: 60px;
+    height: 60px;
     position: absolute;
     top: 0;
     left: 0;
