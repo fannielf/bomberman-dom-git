@@ -227,7 +227,7 @@ function renderGameBoard(map, players, bombs, explosions) {
   }
 
   if (players) {
-    players.forEach(player => {
+    players.forEach((player, index) => {
       if (player.alive && player.position) {
         const { x, y } = player.position;
         const playerIndex = y * colLength + x;
@@ -235,7 +235,8 @@ function renderGameBoard(map, players, bombs, explosions) {
           cells[playerIndex].children.push({
             tag: 'div',
             attrs: {
-              className: 'player'
+              className: 'player',
+              style: `background-image: url('../assets/player${index + 1}.png');`,
             },
             children: []
           });
