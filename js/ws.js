@@ -28,9 +28,6 @@ function connect() {
         if (window.location.hash === '/') return;
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
-    case 'startGame':
-        window.location.hash = '/game'; // Redirect to game page
-        break;
     case 'error':
         if (msg.message === 'Client not found by id') {
             localStorage.removeItem('user'); // Remove user from local storage if client not found
@@ -51,7 +48,7 @@ function connect() {
         window.location.hash = '/'; // Redirect to index page
         break;
     case 'gameStarted':
-        emit('gameStarted', { map: msg.map, players: msg.players });
+        emit('gameStarted', { map: msg.map, players: msg.players, chatHistory: msg.chatHistory });
         window.location.hash = '/game';
         break;
     case 'playerMoved':
