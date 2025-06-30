@@ -69,5 +69,3 @@ export function Lobby() {
     ]
   };
   }
-
-subscribe(() => {render(Lobby(), document.getElementById('app'))});

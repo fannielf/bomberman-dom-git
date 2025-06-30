@@ -44,5 +44,3 @@ return {
   ]
 };
 }
-
-subscribe(() => {render(Main(), document.getElementById('app'))});
