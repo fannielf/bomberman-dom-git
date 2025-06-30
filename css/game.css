@@ -2,7 +2,6 @@
     display: grid;
     grid-template-columns: repeat(15, 60px);
     grid-template-rows: repeat(13, 60px);
-    gap: 1px;
     margin: 20px auto;
     width: fit-content;
 }
@@ -10,20 +9,19 @@
 .cell {
     width: 60px;
     height: 60px;
-    background-color: #90EE90;
-    border: 1px solid #228B22;
+    background-color: #d9d9d9;
     position: relative;
 }
 
 .wall {
-    background-image: url('../assets/solidwall.png');
+    background-image: url('../assets/wall.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
 }
 
 .destructible-wall {
-    background-image: url('../assets/wall_cobblestone_32px.png');
+    background-image: url('../assets/brick.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
