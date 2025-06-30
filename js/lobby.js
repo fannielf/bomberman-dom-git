@@ -44,7 +44,7 @@ export function Lobby() {
         tag: 'p',
         attrs: { style: 'font-size: 20px; font-weight: bold; color: red;' },
         children: [`Game starting in: ${countdown}`]
-      } : [],
+      } : null,
       {
         tag: 'ul',
         attrs: { id: 'player-list' },

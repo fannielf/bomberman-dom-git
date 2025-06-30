@@ -2,12 +2,16 @@ import { sendMessage } from "./ws.js";
 import { Chat } from "./chat.js";
 import { setState, getState, on } from "../framework/index.js";
 
+window.setState = setState; //for testing purposes, remove later
+window.getState = getState; //for testing purposes, remove later
+
 setState({
   gameInfo: "",
   map: null,
   players: [],
   bombs: [],
   explosions: [],
+  gameEnded: false,
 });
 
 // game loop and input handling logic
@@ -17,6 +21,7 @@ let lastMoveTime = 0;
 const MOVE_INTERVAL = 100; // move every 100ms
 
 function handleKeyDown(e) {
+  console.log("Key pressed:", e.key);
   // Prevent default browser actions for arrow keys
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
     e.preventDefault();
@@ -82,6 +87,7 @@ function stopGame() {
 }
 
 export function Game() {
+  console.log("players in game:", getState().players);
   const user = JSON.parse(localStorage.getItem("user"));
 
   if (!user) {
@@ -91,7 +97,8 @@ export function Game() {
 
   const nickname = user.nickname;
   const playerID = user.id;
-  const { gameInfo, map, players, bombs, explosions } = getState();
+  const { gameInfo, map, players, bombs, explosions, gameEnded } = getState();
+  const me = (players || []).find(p => p.id === playerID);
 
   return {
     tag: "div",
@@ -102,6 +109,21 @@ export function Game() {
       },
       {
         tag: "div",
+        attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
+        children: (players || []).map(p => ({
+          tag: "span",
+          attrs: {
+            key: p.id, // ensure each player has a unique key
+            style: `margin-right: 16px; color: ${p.alive ? "black" : "gray"}; font-weight: bold;`
+          },
+          children: [
+            `${p.nickname}: ${p.lives ?? 0} ❤️`
+          ]
+        }))
+      },
+
+      {
+        tag: "div",
         attrs: { id: "game-board" },
         children: map ? renderGameBoard(map, players, bombs, explosions) : [],
       },
@@ -109,6 +131,48 @@ export function Game() {
         tag: "p",
         attrs: { id: "game-info" },
         children: [gameInfo || `Good luck, ${nickname}!`],
+      },
+      !gameEnded && me && me.lives === 0 && {
+        tag: "div",
+        attrs: {
+          style: `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #333;
+            padding: 32px;
+            z-index: 1000;
+            font-size: 2em;
+            text-align: center;
+          `
+        },
+        children: [
+          "You are out of lives! You can still watch and chat."
+        ]
+      },
+      gameEnded && {
+        tag: "div",
+        attrs: {
+          style: `
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #333;
+            padding: 32px;
+            z-index: 1000;
+            font-size: 2em;
+            text-align: center;
+          `
+        },
+        children: [
+          gameInfo,
+          { tag: "br" },
+          { tag: "button", attrs: { onclick: () => window.location.hash = "/" }, children: ["Back to Menu"] }
+        ]
       },
       {
         tag: "button",
@@ -127,9 +191,10 @@ export function Game() {
         attrs: {},
         children: [
           Chat({ playerID, nickname }) // Include Chat component
+          //Chat({ playerID: user.id, nickname: user.nickname })
         ]
       },
-    ],
+    ].filter(Boolean), // Filter out any null values
   };
 }
 
@@ -259,12 +324,45 @@ on("explosionEnded", ({ explosionId }) => {
 
 // Handle player updates (e.g., losing a life)
 on("playerUpdate", ({ player }) => {
+  if (player.lives <= 0 || player.alive === false) {
+    return;
+  }
+  console.log("playerUpdate", player);
   const { players } = getState();
   const newPlayers = players.map((p) => {
-    if (p.id === player.id) {
+    if (p.id === player.id && p.alive !== false) {
       return { ...p, ...player }; // Merge updates
     }
     return p;
   });
   setState({ players: newPlayers });
 });
+
+// Handle player elimination when they lose all lives
+on("playerEliminated", ({ id, nickname }) => {
+  console.log("🔥 playerEliminated EVENT TRIGGERED");
+  const { players } = getState();
+  console.log("players before elimination:", players);
+  const newPlayers = players.map((p) => {
+    if (p.id === id) {
+      return {
+        ...p,
+        lives: 0,
+        alive: false,
+        position: null,
+      };
+    }
+    return p;
+});
+  console.log("players after elimination:", newPlayers);
+  setState({ players: newPlayers });
+});
+
+// Handle game end
+on("gameEnded", ({ winner }) => {
+  setState({ gameInfo: `Game Over! Winner: ${winner}`, gameEnded: true });
+});
+
+
+
+

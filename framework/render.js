@@ -10,8 +10,8 @@ if (!newVNode) return;
 
 // if (!oldVnode) { // Initial render
     const rootDom = createElement(newVNode);
-    appRoot.innerHTML = ''; // Clear the appRoot before appending new content
     newVNode.el = rootDom; // Store the created element in the vnode
+    appRoot.innerHTML = ''; // Clear the appRoot before appending new content
     appRoot.appendChild(rootDom);
   // } else { // Update render
   //   rootDom = patch(rootDom, oldVnode, newVNode);
