@@ -41,3 +41,27 @@ on('newChat', ({ nickname, message }) => {
     chatMessages: [...chatMessages, { nickname, message }]
   });
 });
+
+// Handle player elimination when they lose all lives
+on("playerEliminated", ({ id, nickname }) => {
+  const { players } = getState();
+  console.log("players before elimination:", players);
+  const newPlayers = players.map((p) => {
+    if (p.id === id) {
+      return {
+        ...p,
+        lives: 0,
+        alive: false,
+        position: null,
+      };
+    }
+    return p;
+});
+  console.log("players after elimination:", newPlayers);
+  setState({ players: newPlayers });
+});
+
+// Handle game end
+on("gameEnded", ({ winner }) => {
+  setState({ gameInfo: `Game Over! Winner: ${winner}`, gameEnded: true });
+});

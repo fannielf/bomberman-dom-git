@@ -132,7 +132,8 @@ export function Game() {
         attrs: { id: "game-info" },
         children: [gameInfo || `Good luck, ${nickname}!`],
       },
-      !gameEnded && me && me.lives === 0 && {
+      // player is dead and there are other players alive
+      (!gameEnded && me && me.lives === 0 && players.length > 2) && {
         tag: "div",
         attrs: {
           style: `
@@ -148,13 +149,13 @@ export function Game() {
             text-align: center;
           `
         },
-        children: [
-          "You are out of lives! You can still watch and chat."
-        ]
+        children: ["You are out of lives! You can still watch and chat."]
       },
+  
       gameEnded && {
         tag: "div",
         attrs: {
+          key: "game-over-modal",
           style: `
             position: fixed;
             top: 30%;
@@ -169,7 +170,7 @@ export function Game() {
           `
         },
         children: [
-          gameInfo,
+          `Game Over! Winner: ${gameInfo}`,
           { tag: "br" },
           { tag: "button", attrs: { onclick: () => window.location.hash = "/" }, children: ["Back to Menu"] }
         ]
@@ -338,30 +339,6 @@ on("playerUpdate", ({ player }) => {
   setState({ players: newPlayers });
 });
 
-// Handle player elimination when they lose all lives
-on("playerEliminated", ({ id, nickname }) => {
-  console.log("🔥 playerEliminated EVENT TRIGGERED");
-  const { players } = getState();
-  console.log("players before elimination:", players);
-  const newPlayers = players.map((p) => {
-    if (p.id === id) {
-      return {
-        ...p,
-        lives: 0,
-        alive: false,
-        position: null,
-      };
-    }
-    return p;
-});
-  console.log("players after elimination:", newPlayers);
-  setState({ players: newPlayers });
-});
-
-// Handle game end
-on("gameEnded", ({ winner }) => {
-  setState({ gameInfo: `Game Over! Winner: ${winner}`, gameEnded: true });
-});
 
 
 
