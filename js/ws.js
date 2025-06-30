@@ -63,6 +63,9 @@ function connect() {
     case 'playerUpdate':
         emit('playerUpdate', { player: msg.player });
         break;
+    case 'playerEliminated':
+        emit('playerEliminated', { id: msg.id, nickname: msg.nickname });
+        break;
     }
         
     })

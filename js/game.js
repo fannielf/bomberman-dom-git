@@ -324,9 +324,13 @@ on("explosionEnded", ({ explosionId }) => {
 
 // Handle player updates (e.g., losing a life)
 on("playerUpdate", ({ player }) => {
+  if (player.lives <= 0 || player.alive === false) {
+    return;
+  }
+  console.log("playerUpdate", player);
   const { players } = getState();
   const newPlayers = players.map((p) => {
-    if (p.id === player.id) {
+    if (p.id === player.id && p.alive !== false) {
       return { ...p, ...player }; // Merge updates
     }
     return p;
@@ -336,12 +340,20 @@ on("playerUpdate", ({ player }) => {
 
 // Handle player elimination when they lose all lives
 on("playerEliminated", ({ id, nickname }) => {
-  console.log("playerEliminated", id, nickname);
+  console.log("🔥 playerEliminated EVENT TRIGGERED");
   const { players } = getState();
   console.log("players before elimination:", players);
-  const newPlayers = players.map((p) =>
-    p.id === id ? { ...p, lives: 0, alive: false } : p
-  );
+  const newPlayers = players.map((p) => {
+    if (p.id === id) {
+      return {
+        ...p,
+        lives: 0,
+        alive: false,
+        position: null,
+      };
+    }
+    return p;
+});
   console.log("players after elimination:", newPlayers);
   setState({ players: newPlayers });
 });
