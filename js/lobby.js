@@ -1,11 +1,12 @@
 import { sendMessage } from "./ws.js";
-import { getState, subscribe, render } from "../framework/index.js"
+import { setState } from "../framework/index.js"
 import { Chat } from "./chat.js";
 
 const user = JSON.parse(localStorage.getItem('user'));
 
 if (!user) {
   window.location.hash= '/';
+  setState({ page: '/' });
 } else {
   sendMessage({ type: 'pageReload', id: user.id });
 }
@@ -13,12 +14,12 @@ if (!user) {
 export function Lobby() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) {
+    setState({ page: '/' });
     window.location.hash = '/';
     return;
   }
   const nickname = user.nickname;
   const playerID = user.id;
-  const { error, players, count, countdown } = getState(); // Add countdown here
 
   return {
     tag: 'div',
@@ -37,22 +38,18 @@ export function Lobby() {
       {
         tag: 'p',
         attrs: { id: 'player-count' },
-        children: [`Players: ${count}/4`]
+        children: []
       },
       // Add countdown display
-      countdown !== null ? {
+      {
         tag: 'p',
-        attrs: { style: 'font-size: 20px; font-weight: bold; color: red;' },
-        children: [`Game starting in: ${countdown}`]
-      } : null,
+        attrs: { id: 'timer', style: 'font-size: 20px; font-weight: bold; color: red;' },
+        children: []
+      },
       {
         tag: 'ul',
         attrs: { id: 'player-list' },
-        children: players.map(name => ({
-          tag: 'li',
-          attrs: {},
-          children: [name]
-        }))
+        children: []
       },
       {
         tag: 'div',
@@ -64,8 +61,9 @@ export function Lobby() {
       {
         tag: 'p',
         attrs: { id: 'error', style: 'color:red' },
-        children: [error || '']
+        children: []
       }
     ]
   };
   }
+

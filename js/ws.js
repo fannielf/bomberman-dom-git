@@ -1,6 +1,8 @@
 import {emit}  from '../framework/index.js';
 
 let socket;
+export let error = null;
+export let gameFull = false;
 
 function connect() {
     socket = new WebSocket('ws://localhost:8080/ws');
@@ -18,6 +20,10 @@ function connect() {
     case 'readyTimer': // Add this case
         emit('readyTimer', { countdown: msg.countdown });
         break;
+    case 'playerExists':
+        // If player already exists, redirect to lobby
+        window.location.hash = '/lobby'; // Redirect to lobby page
+        emit('playerJoined', { id: msg.id, nickname: msg.nickname });
     case 'chat':
         if (window.location.hash === '/') return;
         emit('newChat', {nickname: msg.nickname, message: msg.message});
@@ -34,7 +40,7 @@ function connect() {
         break;
     case 'playerCount':
         // update player count and list
-        emit('updatePlayerCount', {count: msg.count, players: msg.players, gameFull: msg.gameFull});
+        emit('updatePlayerCount', {count: msg.count, players: msg.players, gameFull: msg.gameFull, chatHistory: msg.chatHistory});
         break;
     case 'playerJoined':
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });

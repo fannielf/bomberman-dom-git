@@ -1,4 +1,4 @@
-import { broadcast } from "../server.js";
+import { broadcast } from "../handlers/connection.js";
 
 const players = new Map();
 const playerPositions = [];

@@ -1,10 +1,11 @@
-import { createElement, patch } from './dom.js';
+import { createElement } from './dom.js';
 
 // let rootDom = null; // the actual DOM root created from vnode
 // let oldVnode = null;  // stores last vnode
 
 // Render
 export function render(newVNode, appRoot) {
+  console.log('Rendering new VNode:', newVNode);
 
 if (!newVNode) return;
 
