@@ -52,29 +52,28 @@ export function deActivePlayer(id) {
   if (!player) return;
   player.alive = false;
   player.position = null; // Remove position if player is deactivated
-  lives = 0; // Reset lives
+  player.lives = 0; // Reset lives
   broadcast({ type: "playerDeactivated", nickname: player.nickname });
-  removePlayer(id); // Remove player from the game
-  if (players.size === 1) {
-    // If only one player left, end the game
-    const winner = Array.from(players.values())[0];
-    gameState.status = "ended";
-    broadcast({
-      type: "gameEnded",
-      winner: winner.nickname,
-    });
-  }
+  //removePlayer(id); // Remove player from the game
+  checkGameEnd();
 }
 
 function looseLife(id) {
+  console.log("looseLife called for player:", id);
   const player = players.get(id);
   if (!player) return;
   player.lives--;
   if (player.lives <= 0) {
+    console.log(`Player ${player.nickname} has been eliminated.`);
+    player.lives = 0; // Ensure lives don't go negative
     player.alive = false;
     player.position = null; // Remove position if player is eliminated
-    removePlayer(id); // Remove player if lives reach 0
-    broadcast({ type: "playerEliminated", nickname: player.nickname });
+    console.log("AFTER ELIMINATION", player);
+    //removePlayer(id); // Remove player if lives reach 0
+    broadcast({ type: "playerEliminated", nickname: player.nickname, id: player.id });
+    checkGameEnd();
+  } else {
+    broadcast({ type: "playerUpdate", player: { id: player.id, lives: player.lives } });
   }
 }
 
@@ -117,6 +116,7 @@ function handlePlaceBomb(playerId) {
 }
 
 function explodeBomb(bombId) {
+  console.log("Exploding bomb:", bombId);
   const bombIndex = gameState.bombs.findIndex((b) => b.id === bombId);
   if (bombIndex === -1) return;
 
@@ -155,21 +155,20 @@ function explodeBomb(bombId) {
     }
   }
 
-  // Check for players in explosion tiles
-    for (const player of players.values()) {
+  // Check for players hit by the explosion
+  const hitPlayers = [];
+  for (const player of players.values()) {
     if (!player.alive || !player.position) continue;
     const key = `${player.position.x},${player.position.y}`;
     if (explosionTiles.has(key)) {
-      player.lives--;
-      if (player.lives <= 0) {
-        player.alive = false;
-        player.position = null;
-        broadcast({ type: "playerEliminated", nickname: player.nickname, id: player.id });
-      } else {
-        broadcast({ type: "playerUpdate", player: { id: player.id, lives: player.lives } });
-      }
+      hitPlayers.push(player);
     }
   }
+
+  // renew the lives and status of players hit by the explosion
+    for (const player of hitPlayers) {
+      looseLife(player.id);
+    }
 
   const explosion = {
     id: crypto.randomUUID(),
@@ -370,4 +369,16 @@ function getPlayerPositions() {
   ];
 
   return positions;
+}
+
+function checkGameEnd() {
+  const alivePlayers = Array.from(players.values()).filter(p => p.alive);
+  if (alivePlayers.length === 1) {
+    const winner = alivePlayers[0];
+    gameState.status = "ended";
+    broadcast({
+      type: "gameEnded",
+      winner: winner.nickname,
+    });
+  }
 }
