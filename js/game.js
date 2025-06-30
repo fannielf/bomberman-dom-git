@@ -121,7 +121,7 @@ export function Game() {
       {
         tag: "div",
         attrs: { id: "game-board" },
-        children: map ? renderGameBoard(map, players, bombs, explosions) : [],
+        children: map ? renderGameBoard(map, players, bombs, explosions) : null,
       },
       {
         tag: "p",

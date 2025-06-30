@@ -45,4 +45,4 @@ return {
 };
 }
 
-subscribe(() => {render(Main(), document.getElementById('app'))});
+//subscribe(() => {render(Main(), document.getElementById('app'))});
