@@ -382,5 +382,7 @@ function checkGameEnd() {
       type: "gameEnded",
       winner: winner.nickname,
     });
+    
+    chatHistory.length = 0; // Clear chat when game ends
   }
 }
