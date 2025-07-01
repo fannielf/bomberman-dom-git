@@ -143,15 +143,14 @@ export function showExplosion(explosion) {
 export function placeBomb(bomb) {
   const { x, y, id } = bomb;
   const board = document.getElementById("game-board");
-  const cells = board.querySelectorAll(".cell");
-  const index = y * colLength + x;
+  if (!board) return;
 
-  if (cells[index]) {
-    const cell = cells[index];
-    const bombEl = document.createElement("div");
-    bombEl.className = `bomb bomb-${id}`;
-    cell.appendChild(bombEl);
-  }
+  const cell = board.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
+  if (!cell) return;
+
+  const bombEl = document.createElement("div");
+  bombEl.className = `bomb bomb-${id}`;
+  cell.appendChild(bombEl);
 }
 
 export function updatePlayer(player) {
