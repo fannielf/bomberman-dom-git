@@ -12,7 +12,7 @@ const gameState = {
     // Game map configuration
     width: 0,
     height: 0,
-    tiles: [], // 2D array of 'empty' | 'wall' | 'block'
+    tiles: [], // 2D array of 'empty' | 'wall' | 'destructible-wall'
     powerUps: [], // [{x, y, type}]
   },
   bombs: [],
@@ -42,6 +42,7 @@ function addPlayer(client) {
     bombRange: 1, // Default bomb range
     bombCount: 1, // Default bomb count
   });
+
 }
 
 function removePlayer(id) {
@@ -298,14 +299,17 @@ function startCountdown() {
     broadcast({ type: "readyTimer", countdown });
 
     if (countdown <= 0) {
+      if (players.size < 2) {
+        // reset countdown
+      }
       clearInterval(readyTimer);
+      broadcast({ type: "gameState" });
       readyTimer = null;
-      startGame();
     }
-  }, 1000);
+  }, 10);
 }
 
-function startGame() {
+export function startGame() {
   gameState.status = "running";
   // Send the map to clients
   broadcast({
