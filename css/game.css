@@ -30,7 +30,6 @@
 .player {
     width: 60px;
     height: 60px;
-    /* background-image: url('../assets/player.png');  */
     background-size: cover;
     background-position: center;
     border: none; /* remove border if not needed */
@@ -39,6 +38,19 @@
     top: 1px;
     left: 1px;
     z-index: 10;
+}
+
+.player1 {
+    background-image: url('../assets/player1.png');
+}
+.player2 {
+    background-image: url('../assets/player2.png');
+}
+.player3 {
+    background-image: url('../assets/player3.png');
+}
+.player4 {
+    background-image: url('../assets/player4.png');
 }
 
 .bomb {
@@ -62,4 +74,30 @@
     left: 0;
     z-index: 20;
     animation: explosion-animation 0.5s forwards;
+}
+
+#elimination-message {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #333;
+    padding: 32px;
+    z-index: 1000;
+    font-size: 2em;
+    text-align: center;
+}
+
+#game-over {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #333;
+    padding: 32px;
+    z-index: 1000;
+    font-size: 2em;
+    text-align: center;
 }

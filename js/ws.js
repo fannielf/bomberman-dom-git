@@ -1,4 +1,4 @@
-import {emit}  from '../framework/index.js';
+import {emit, once}  from '../framework/index.js';
 
 let socket;
 export let error = null;
@@ -20,36 +20,43 @@ function connect() {
     case 'readyTimer': // Add this case
         emit('readyTimer', { countdown: msg.countdown });
         break;
+    case 'gameState':
+        // setState({ page: '/game' });
+        window.location.hash = '/game'; // Redirect to game page
+        sendMessage({ type: 'gameStart'});
+        break;
     case 'playerExists':
         // If player already exists, redirect to lobby
         window.location.hash = '/lobby'; // Redirect to lobby page
+        // setState({ page: '/lobby' });
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });
+        break;
     case 'chat':
+        console.log("chat message received:", msg);
         if (window.location.hash === '/') return;
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
     case 'error':
         if (msg.message === 'Client not found by id') {
-            localStorage.removeItem('user'); // Remove user from local storage if client not found
-            window.location.hash = '/'; // Redirect to index page
-        } // Ignore this error
+            reset();
+        }
         emit('showError', msg.message);
         break;
     case 'playerCount':
-        // update player count and list
+        console.log("player count message received:", msg);
         emit('updatePlayerCount', {count: msg.count, players: msg.players, gameFull: msg.gameFull, chatHistory: msg.chatHistory});
         break;
     case 'playerJoined':
+        console.log("player joined message received:", msg);
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });
         break;
-    case 'reconnected':
-    case 'lobbyReset':
-        localStorage.removeItem('user'); // Remove user from local storage
-        window.location.hash = '/'; // Redirect to index page
-        break;
+    // case 'lobbyReset':
+    //     console.log("lobby reset message received:", msg);
+    //     reset();
+    //     break;
     case 'gameStarted':
+        console.log("game started message received:", msg);
         emit('gameStarted', { map: msg.map, players: msg.players, chatHistory: msg.chatHistory });
-        window.location.hash = '/game';
         break;
     case 'playerMoved':
         emit('playerMoved', { id: msg.id, position: msg.position });
@@ -60,14 +67,14 @@ function connect() {
     case 'explosion':
         emit('explosion', { bombId: msg.bombId, explosion: msg.explosion, updatedMap: msg.updatedMap });
         break;
-    case 'explosionEnded':
-        emit('explosionEnded', { explosionId: msg.explosionId });
-        break;
     case 'playerUpdate':
         emit('playerUpdate', { player: msg.player });
         break;
     case 'playerEliminated':
         emit('playerEliminated', { id: msg.id, nickname: msg.nickname });
+        break;
+    case 'gameUpdate':
+        emit('gameUpdate', {gameState: msg.gameState, players: msg.players, chatHistory: msg.chatHistory });
         break;
     }
         
@@ -85,4 +92,11 @@ export function sendMessage(message) {
       socket.send(JSON.stringify(message));
     }, { once: true });
   }
+}
+
+// resest to start page
+function reset() {
+    localStorage.removeItem('user'); // Remove user from local storage
+    // setState({ page: '/' });
+    window.location.hash = '/'; // Redirect to start page
 }

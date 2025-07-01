@@ -10,6 +10,6 @@ addRoute('/', Main);
 addRoute('/lobby', Lobby);
 addRoute('/game', Game);
 
-setState({
-  page: '/',
-});
+// setState({
+//   page: '/',
+// });
