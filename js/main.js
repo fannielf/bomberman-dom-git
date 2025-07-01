@@ -1,8 +1,14 @@
-import { sendMessage } from "./ws.js";
-import { setState, getState, subscribe, render} from "../framework/index.js"
+import { setState, emit } from "../framework/index.js";
+import { sendMessage, gameFull, error } from "./ws.js";
 
 export function Main() {
-  const { nickname, gameFull, error} = getState();
+  console.log('Main component loaded');
+
+  let nickname = '';
+
+  const user = JSON.parse(localStorage.getItem('user'));
+  const userID = user ? user.id : null;
+
 
 return {
   tag: 'div',
@@ -23,12 +29,12 @@ return {
         id: 'join-btn',
         disabled: gameFull,
         onclick: () => {
-          const nickname = document.getElementById('nickname-input').value.trim();
+          nickname = document.getElementById('nickname-input').value.trim();
           if (!nickname) {
-            setState({ error: 'Please enter a nickname' });
+            emit('showError', 'Nickname cannot be empty');
             return;
           }
-          sendMessage({ type: 'join', nickname });
+          sendMessage({ type: 'join', id: userID, nickname });
         }
       },
       children: ['Join Game']
@@ -44,5 +50,3 @@ return {
   ]
 };
 }
-
-//subscribe(() => {render(Main(), document.getElementById('app'))});

@@ -11,13 +11,5 @@ addRoute('/lobby', Lobby);
 addRoute('/game', Game);
 
 setState({
-  error: '',
-  nickname: '',
-  players: [],
-  gameFull: false,
-  count: 0,
-  countdown: null,
-  chatMessages: [],
-  gameInfo: '',
-  map: null,
+  page: '/',
 });

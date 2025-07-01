@@ -1,8 +1,7 @@
 import { sendMessage } from "./ws.js";
-import { on, setState, getState } from "../framework/index.js";
+import { on } from "../framework/index.js";
 
 export function Chat({ playerID, nickname }) {
-  const { chatMessages } = getState();
 
   return {
     tag: 'div',
@@ -11,10 +10,7 @@ export function Chat({ playerID, nickname }) {
       {
         tag: 'div',
         attrs: { id: 'chat' },
-        children: chatMessages.map(({ nickname, message }) => ({
-          tag: 'div',
-          children: [`${nickname}: ${message}`]
-        }))
+        children: []
       },
       {
         tag: 'input',
@@ -41,3 +37,14 @@ export function Chat({ playerID, nickname }) {
     ]
   };
 }
+
+
+// Chat state and handler (can be imported in both lobby and game)
+on('newChat', ({ nickname, message }) => {
+  const chatContainer = document.getElementById('chat');
+  if (chatContainer) {
+    chatContainer.innerHTML += `<div>${nickname}: ${message}</div>`;
+    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
+  }
+});
+

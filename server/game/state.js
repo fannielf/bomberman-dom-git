@@ -1,4 +1,5 @@
-import { broadcast } from "../server.js";
+import { chatHistory } from "../handlers/chat.js";
+import { broadcast } from "../handlers/connection.js";
 
 const players = new Map();
 const playerPositions = [];
@@ -311,6 +312,7 @@ function startGame() {
     type: "gameStarted",
     map: gameState.map,
     players: Array.from(players.values()),
+    chatHistory,
   });
 }
 

@@ -1,22 +1,11 @@
-import { WebSocketServer, WebSocket } from 'ws'; // Import server and connection classes from 'ws' package
-import { addPlayer, deActivePlayer, startCountdown, handlePlayerMove, handlePlaceBomb } from './game/state.js';
+import { WebSocketServer } from 'ws'; // Import server from 'ws' package
+import { deActivePlayer, handlePlayerMove, handlePlaceBomb } from './game/state.js';
+import { clients, broadcast, sendMsg, updateConnection } from './handlers/connection.js'; // Import the clients map to manage connections
+import { handleJoin, readyTimer } from './handlers/main.js';
+import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby update function
+import { handleNewChat } from './handlers/chat.js'; // Import chat handling function
 
 const server = new WebSocketServer({ port: 8080 });
-
-const clients = new Map(); // id -> { ws, nickname }
-let waitTimer = null;
-let firstJoinTime = null;
-
-// Broadcasts a message to all connected clients, except the one specified in 'exclude'
-export function broadcast(data, exclude=null) {
-
-  for (const { ws } of clients.values()) {
-    if (ws !== exclude && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(data));
-    }
-  }
-
-}
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
@@ -25,17 +14,17 @@ server.on('connection', ws => {
 
     let data;
     try { data = JSON.parse(msg) } catch {
-      ws.send(JSON.stringify({ type:'error', message:'Invalid JSON' }));
+      sendMsg(ws, 'error', { message: 'Invalid JSON' });
       return;
     }
 
     let id = data.id ?? null;
 
-    if (data.type !== 'join' && data.type !== 'ping' && id === null) { // Check if id is provided for non-join messages
-      ws.send(JSON.stringify({ type: 'error', message: 'Missing playerID' }));
+    if (data.type !== 'join' && id === null) { // Check if id is provided for non-join messages
+      sendMsg(ws, 'error', { message: 'Missing playerID' });
       return;
     } else if (!clients.has(id) && data.type !== 'join' ) { // Check if client exists
-      ws.send(JSON.stringify({ type: 'error', message: 'Client not found by id' }));
+      sendMsg(ws, 'error', { message: 'Client not found by id' });
       return;
     }
 
@@ -43,33 +32,11 @@ server.on('connection', ws => {
     switch (data.type) {
       case 'join': // Join a game with a nickname
         handleJoin(id, ws, data);
-        if (clients.size === 2 && !waitTimer) {
-          firstJoinTime = Date.now(); // Record the time of the first join
-          waitTimer = setInterval(() => {
-            if (clients.size === 0) {
-              clearInterval(waitTimer);
-              waitTimer = null;
-              firstJoinTime = null;
-            } else if (clients.size === 4) { // If 4 players have joined, start the countdown
-              statusCountdown();
-            } else if (Date.now() - firstJoinTime > 20000) { // If no new joins after 20 seconds, reset
-              if (clients.size >= 2) {
-              statusCountdown();
-            } else {
-              console.log("Resetting lobby due to inactivity");
-              broadcast({ type: 'lobbyReset' }); // Notify all clients about the reset
-              clients.clear(); // Clear all clients
-              clearInterval(waitTimer);
-              waitTimer = null;
-              firstJoinTime = null; // Reset first join time
-            }
-            }
-          }, 1000); // Check every second
-        }
+        readyTimer(); // Start the ready timer if needed
         break;
 
       case 'chat': // Handle chat messages
-        broadcast({ type: 'chat', nickname: clients.get(id).nickname, message: data.message });
+        handleNewChat(id, data)
         break;
 
       case 'move':
@@ -91,10 +58,10 @@ server.on('connection', ws => {
       case 'pageReload': // update connection when pages are reloaded
         if (clients.has(id)) {
           updateConnection(id, ws)
-          ws.send(JSON.stringify({ type: 'reconnected', id, nickname: clients.get(id).nickname }));
+          sendMsg(ws, 'reconnected', { id, nickname: clients.get(id).nickname });
           sendLobbyUpdate(); // Send updated player count and list
         } else {
-          ws.send(JSON.stringify({ type: 'error', message: 'Client not found by id' }));
+          sendMsg(ws, 'error', { message: 'Client not found by id' });
         }
         break;
       case 'leaveGame':
@@ -102,7 +69,7 @@ server.on('connection', ws => {
         clients.delete(id); // Remove client from the map
 
       default: // Handle unknown message types
-        ws.send(JSON.stringify({ type: 'error', message: 'Unknown message type' }));
+        sendMsg(ws, 'error', { message: 'Unknown message type' });
         return;
     }
   });
@@ -115,66 +82,3 @@ server.on('connection', ws => {
 
 });
 
-// update the user connection
-function updateConnection(id, conn) {
-    clients.get(id).ws = conn; // Update WebSocket connection for the client
-}
-
-function sendLobbyUpdate() {
-  broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname), gameFull: clients.size >= 4 });
-}
-
-function handleJoin(id, ws, data) {
-
-  if (clients.has(id)) { // Prevent re-joining
-      ws.send(JSON.stringify({ type: 'playerExists', id: id, nickname: clients.get(id).nickname })); // Notify client of successful join
-      return;
-    }; 
-
-  if (clients.size >= 4) { // Limit to 4 players
-    ws.send(JSON.stringify({ type: 'error', message: 'Game is full', gameFull: clients.size >= 4 }));
-    return;
-
-  } else {
-    const error = validateNickname(data); // Validate nickname
-    if (error) {
-      ws.send(JSON.stringify(error)); // Send error if nickname is invalid
-      return;
-    }
-
-    id = crypto.randomUUID(); // create unique ID
-    clients.set(id, { ws, nickname: data.nickname.trim() }); // Store id, connection andn nickname
-    ws.send(JSON.stringify({ type: 'playerJoined', id: id, nickname: clients.get(id).nickname })); // Notify client of successful join
-    // if game is full, start countdown
-    if (clients.size === 4) {
-      startCountdown();
-      addPlayer();
-    }
-  }
-}
-
-function validateNickname(data) {
-  if (!data.nickname || data.nickname.trim() === '') {
-    return { type: 'error', message: 'Nickname missing' };
-  }
-
-  const nickname = data.nickname.trim().toLowerCase();
-
-  for (let client of clients.values()) {
-    if (client.nickname.toLowerCase() === nickname) {
-      return { type: 'error', message: 'Nickname already taken' };
-    }
-  }
-
-  return null; // valid
-}
-
-function statusCountdown() {
-  startCountdown();
-  for (const [id, client] of clients) {
-    addPlayer({ id, nickname: client.nickname }); // Add players to the game state
-  }
-  clearInterval(waitTimer);
-  waitTimer = null;
-  firstJoinTime = null;
-}

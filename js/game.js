@@ -127,11 +127,6 @@ export function Game() {
         attrs: { id: "game-board" },
         children: map ? renderGameBoard(map, players, bombs, explosions) : [],
       },
-      {
-        tag: "p",
-        attrs: { id: "game-info" },
-        children: [gameInfo || `Good luck, ${nickname}!`],
-      },
       // player is dead and there are other players alive
       (!gameEnded && me && me.lives === 0 && players.length > 2) && {
         tag: "div",
@@ -141,15 +136,15 @@ export function Game() {
             top: 30%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            border: 2px solid #333;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(105, 103, 103, 0.5);
             padding: 32px;
             z-index: 1000;
             font-size: 2em;
             text-align: center;
           `
         },
-        children: ["You are out of lives! You can still watch and chat."]
+        children: ["You have been beaten! You can still watch the fight and chat."]
       },
   
       gameEnded && {
@@ -161,8 +156,8 @@ export function Game() {
             top: 30%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            border: 2px solid #333;
+            background: rgba(119, 30, 30, 0.9);
+            border: 1px solid rgba(105, 103, 103, 0.5);
             padding: 32px;
             z-index: 1000;
             font-size: 2em;
@@ -170,7 +165,7 @@ export function Game() {
           `
         },
         children: [
-          `Game Over! Winner: ${gameInfo}`,
+          `${gameInfo}`,
           { tag: "br" },
           { tag: "button", attrs: { onclick: () => window.location.hash = "/" }, children: ["Back to Menu"] }
         ]
@@ -192,7 +187,6 @@ export function Game() {
         attrs: {},
         children: [
           Chat({ playerID, nickname }) // Include Chat component
-          //Chat({ playerID: user.id, nickname: user.nickname })
         ]
       },
     ].filter(Boolean), // Filter out any null values
@@ -228,7 +222,7 @@ function renderGameBoard(map, players, bombs, explosions) {
   }
 
   if (players) {
-    players.forEach(player => {
+    players.forEach((player, index) => {
       if (player.alive && player.position) {
         const { x, y } = player.position;
         const playerIndex = y * colLength + x;
@@ -236,7 +230,8 @@ function renderGameBoard(map, players, bombs, explosions) {
           cells[playerIndex].children.push({
             tag: 'div',
             attrs: {
-              className: 'player'
+              className: 'player',
+              style: `background-image: url('../assets/player${index + 1}.png');`,
             },
             children: []
           });

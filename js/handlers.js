@@ -1,21 +1,7 @@
-import { setState, getState, on } from '../framework/index.js';
+import { setState, on } from '../framework/index.js';
 import { sendMessage } from './ws.js';
 
 console.log('Handlers loaded');
-
-on('showError', (message) => {
-  setState({
-    error: message
-  });
-})
-
-on('updatePlayerCount', ({count, players, gameFull}) => {
-   setState({
-    count,
-    gameFull,
-    players,
-  });
-})
 
 on('playerJoined', ({id, nickname}) => {
   localStorage.setItem('user', JSON.stringify({ id, nickname }));
@@ -23,10 +9,6 @@ on('playerJoined', ({id, nickname}) => {
   sendMessage({ type: 'lobby', id });
 });
 
-// Add countdown handler
-on('readyTimer', ({ countdown }) => {
-  setState({ countdown });
-});
 
 // Handle game start message
 on('gameStarted', ({ map }) => {
@@ -34,12 +16,51 @@ on('gameStarted', ({ map }) => {
 });
 
 
-// Chat state and handler (can be imported in both lobby and game)
-on('newChat', ({ nickname, message }) => {
-  const { chatMessages } = getState();
-  setState({
-    chatMessages: [...chatMessages, { nickname, message }]
-  });
+on('showError', (message) => {
+  const errorEl = document.getElementById('error');
+  if (errorEl) errorEl.textContent = message;
+})
+
+
+on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
+
+  // update count
+  const countEl = document.getElementById('player-count');
+  if (countEl) countEl.textContent = `Players: ${count}/4`;
+
+  // update player list
+  const playerListEl = document.getElementById('player-list');
+  if (playerListEl) {
+    playerListEl.innerHTML = '';
+    players.forEach(player => {
+      const li = document.createElement('li');
+      li.textContent = player;
+      playerListEl.appendChild(li);
+    });
+  }
+
+  const chatContainer = document.getElementById('chat');
+  if (chatContainer && chatContainer.innerHTML === '') {
+    chatHistory.forEach(entry => {
+      const div = document.createElement('div');
+      div.textContent = `${entry.nickname}: ${entry.message}`;
+      chatContainer.appendChild(div);
+    });
+  }
+
+  // update game full status
+  const errorEl = document.getElementById('error');
+  if (errorEl) errorEl.textContent = gameFull ? 'Game is full' : '';
+
+});
+
+
+// Add countdown handler
+on('readyTimer', ({ countdown }) => {
+  const timerContainer = document.getElementById('timer');
+  if (timerContainer) {
+    timerContainer.textContent = `Game starting in: ${countdown} s`;
+  }
 });
 
 // Handle player elimination when they lose all lives
@@ -63,5 +84,5 @@ on("playerEliminated", ({ id, nickname }) => {
 
 // Handle game end
 on("gameEnded", ({ winner }) => {
-  setState({ gameInfo: `Game Over! Winner: ${winner}`, gameEnded: true });
+  setState({ gameInfo: `Twilight fades. The last light is: ${winner}`, gameEnded: true });
 });

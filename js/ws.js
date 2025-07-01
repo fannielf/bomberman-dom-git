@@ -1,6 +1,8 @@
 import {emit}  from '../framework/index.js';
 
 let socket;
+export let error = null;
+export let gameFull = false;
 
 function connect() {
     socket = new WebSocket('ws://localhost:8080/ws');
@@ -18,12 +20,13 @@ function connect() {
     case 'readyTimer': // Add this case
         emit('readyTimer', { countdown: msg.countdown });
         break;
+    case 'playerExists':
+        // If player already exists, redirect to lobby
+        window.location.hash = '/lobby'; // Redirect to lobby page
+        emit('playerJoined', { id: msg.id, nickname: msg.nickname });
     case 'chat':
         if (window.location.hash === '/') return;
         emit('newChat', {nickname: msg.nickname, message: msg.message});
-        break;
-    case 'startGame':
-        window.location.hash = '/game'; // Redirect to game page
         break;
     case 'error':
         if (msg.message === 'Client not found by id') {
@@ -34,7 +37,7 @@ function connect() {
         break;
     case 'playerCount':
         // update player count and list
-        emit('updatePlayerCount', {count: msg.count, players: msg.players, gameFull: msg.gameFull});
+        emit('updatePlayerCount', {count: msg.count, players: msg.players, gameFull: msg.gameFull, chatHistory: msg.chatHistory});
         break;
     case 'playerJoined':
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });
@@ -45,7 +48,7 @@ function connect() {
         window.location.hash = '/'; // Redirect to index page
         break;
     case 'gameStarted':
-        emit('gameStarted', { map: msg.map, players: msg.players });
+        emit('gameStarted', { map: msg.map, players: msg.players, chatHistory: msg.chatHistory });
         window.location.hash = '/game';
         break;
     case 'playerMoved':
