@@ -18,6 +18,7 @@
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
+    /* position: absolute; */
 }
 
 .destructible-wall {
@@ -25,6 +26,8 @@
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
+    /* position: absolute; */
+    z-index: 5;
 }
 
 .player {
@@ -32,11 +35,12 @@
     height: 60px;
     background-size: cover;
     background-position: center;
+    
     border: none; /* remove border if not needed */
     border-radius: 0; /* remove if your image isn't circular */
-    position: absolute;
-    top: 1px;
-    left: 1px;
+    /* position: absolute; */
+    top: 0px;
+    left: 0px;
     z-index: 10;
 }
 
@@ -62,7 +66,7 @@
     position: absolute;
     top: 1px;
     left: 1px;
-    z-index: 10;
+    z-index: 9;
 }
 
 .explosion {

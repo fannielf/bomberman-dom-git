@@ -76,9 +76,8 @@ on("gameStarted", ({ map, players, chatHistory }) => {
 });
 
 // Handle player movement updates from the server
-on("playerMoved", ({ id, position }) => {
-  if (!width) return;
-  updatePlayerPosition(id, position, width); 
+on("playerMoved", ({ id, position}) => {
+  updatePlayerPosition(id, position); 
 });
 
 // Handle bomb placement

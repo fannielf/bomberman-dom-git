@@ -59,7 +59,7 @@ function connect() {
         emit('gameStarted', { map: msg.map, players: msg.players, chatHistory: msg.chatHistory });
         break;
     case 'playerMoved':
-        emit('playerMoved', { id: msg.id, position: msg.position });
+        emit('playerMoved', { id: msg.id, position: msg.position, oldPosition: msg.oldPosition});
         break;
     case 'bombPlaced':
         emit('bombPlaced', { bomb: msg.bomb });

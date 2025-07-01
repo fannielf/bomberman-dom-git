@@ -1,4 +1,3 @@
-import { setState } from "../framework/index.js";
 import { sendMessage } from "./ws.js";
 
 // game loop and input handling logic
@@ -97,11 +96,10 @@ export function renderPlayers(players, width) {
     const index = p.position.y * width + p.position.x;
     const cell = document.querySelector(`#game-board .cell:nth-child(${index + 1})`);
     if (!cell) return;
-    
-    const avatar = document.createElement("div");
-    avatar.className = "player player" + (i + 1);
-    avatar.dataset.playerId = p.id;
-    cell.appendChild(avatar);
+
+    cell.classList.add("player", "player" + (i + 1));
+    cell.dataset.playerClass = "player" + (i + 1);
+    cell.dataset.playerId = p.id;
   });
 }
 
@@ -159,44 +157,50 @@ export function placeBomb(bomb) {
 export function updatePlayer(player) {
   const { id, position, lives, alive } = player;
   const board = document.getElementById("game-board");
-  const cells = board.querySelectorAll(".cell");
-  const index = position.y * colLength + position.x;
+  const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
 
-  if (cells[index]) {
-    const cell = cells[index];
-    cell.classList.toggle("alive", alive);
-    cell.classList.toggle("dead", !alive);
+  if (!avatar || !position) return;
+  if (avatar.parentElement) {
+    avatar.parentElement.classList.toggle("alive", alive);
+    avatar.parentElement.classList.toggle("dead", !alive);
   }
+  
 }
 
 export function leaveGame(id) {
   if (!id) return
     sendMessage({ type: "leaveGame", id });
-    //localStorage.removeItem("user");
+    localStorage.removeItem("user");
     stopGame(); // Stop the loop and remove listeners
     window.location.hash = "/";
-    // setState({ page: "/" });
 }
 
-export function updatePlayerPosition(id, position, width) {
+export function updatePlayerPosition(id, position) {
   const board = document.getElementById("game-board");
-  const cells = board.querySelectorAll(".cell");
-  const index = position.y * width + position.x;
+  if (!board) return;
 
-  if (!cells[index]) return;
-
-  const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
-  if (!avatar) return;
-
+  const cell = document.querySelector(`.cell.player[data-player-id="${id}"]`);
+  if (!cell) return;
+  const playerClass = cell.dataset.playerClass;
+  if (!playerClass) return;
+  const playerId = cell.dataset.playerId;
+  if (!playerId) return;
+  
+  const newCell = board.querySelector(
+    `.cell[data-row="${position.y}"][data-col="${position.x}"]`
+  );
+  if (!newCell) return;
+  
   // Remove avatar from old cell
-  if (avatar.parentElement) {
-    avatar.parentElement.classList.remove("player");
-    avatar.parentElement.removeChild(avatar);
-  }
+
+  cell.classList.remove('player', playerClass);
+  delete cell.dataset.playerClass;
+  delete cell.dataset.playerId;
+
 
   // Add avatar to new cell
-  const newCell = cells[index];
-  newCell.classList.add("player");
-  newCell.appendChild(avatar);
+  newCell.classList.add("player", playerClass);
+  newCell.dataset.playerClass = playerClass;
+  newCell.dataset.playerId = playerId;
 
 }

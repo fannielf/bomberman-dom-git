@@ -189,16 +189,16 @@ function explodeBomb(bombId) {
     updatedMap: gameState.map,
   });
 
-  // Remove the explosion visual after a short time
-  setTimeout(() => {
-    const explosionIndex = gameState.explosions.findIndex(
-      (e) => e.id === explosion.id
-    );
-    if (explosionIndex !== -1) {
-      gameState.explosions.splice(explosionIndex, 1);
-      broadcast({ type: "explosionEnded", explosionId: explosion.id });
-    }
-  }, 500);
+  // // Remove the explosion visual after a short time
+  // setTimeout(() => {
+  //   const explosionIndex = gameState.explosions.findIndex(
+  //     (e) => e.id === explosion.id
+  //   );
+  //   if (explosionIndex !== -1) {
+  //     gameState.explosions.splice(explosionIndex, 1);
+  //     broadcast({ type: "explosionEnded", explosionId: explosion.id });
+  //   }
+  // }, 500);
 }
 
 function getPlayerState(id) {
@@ -238,9 +238,10 @@ function handlePlayerMove(id, direction) {
   }
 
   if (isPositionValid(newPosition)) {
+    const oldPosition = player.position;
     player.position = newPosition;
     // Broadcast the move to all clients
-    broadcast({ type: "playerMoved", id, position: newPosition });
+    broadcast({ type: "playerMoved", id, position: newPosition, oldPosition });
   }
 }
 
