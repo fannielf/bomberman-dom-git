@@ -51,10 +51,9 @@ export function Game() {
         attrs: {
           onclick: () => {
             sendMessage({ type: "leaveGame", id: user.id });
-            //localStorage.removeItem("user");
+            localStorage.removeItem("user");
             stopGame(); // Stop the loop and remove listeners
             window.location.hash = "/";
-            // setState({ page: "/" });
         },
         children: ["Leave Game"],
         },
