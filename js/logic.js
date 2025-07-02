@@ -193,3 +193,11 @@ export function updatePlayerPosition(id, position) {
   newCell.dataset.playerId = playerId;
 
 }
+
+//rerender the game component
+export function rerenderGame() {
+  const appRoot = document.getElementById('app');
+  if (window.location.hash === "#/game" && appRoot) {
+    render(Game(), appRoot);
+  }
+}

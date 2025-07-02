@@ -1,6 +1,6 @@
 import { on, render } from '../framework/index.js';
 import { sendMessage } from './ws.js';
-import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers } from './logic.js';
+import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, rerenderGame } from './logic.js';
 
 console.log('Handlers loaded');
 let width;
@@ -19,7 +19,7 @@ on('showError', (message) => {
 
 on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
 
-  // update count
+  // update count in the lobby
   const countEl = document.getElementById('player-count');
   if (countEl) countEl.textContent = `Players: ${count}/4`;
 
@@ -59,13 +59,14 @@ on('readyTimer', ({ countdown }) => {
   }
 });
 
-// Handle game start message
+// clients handler gets the message from the server when the game starts
 on("gameStarted", ({ map, players, chatHistory }) => {
-  currentPlayers = players;
+  currentPlayers = players; // store the current players
   width = map.width; // Store the width for rendering players
-  renderStaticBoard(map);
-  renderPlayers(players, map.width);
-  startGame();
+  renderStaticBoard(map); // render the empty board
+  renderPlayers(players, map.width); // render players on the board
+  startGame(); // start the game loop
+  rerenderGame(); //
 
   const chatContainer = document.getElementById('chat');
   if (chatContainer && chatContainer.innerHTML === '') {
@@ -144,21 +145,18 @@ on ("gameUpdate", ({ gameState, players, chatHistory }) => {
   renderStaticBoard(gameState.map);
   renderPlayers(players, gameState.map.width);
   renderChatHistory(chatHistory);
+  rerenderGame();
 });
 
 on("sendMessage", ({ msg }) => {
   sendMessage(msg);
 });
 
-// on("gameReset", () => {
-//   setState({ 
-//     gameInfo: '', 
-//     gameEnded: false,
-//     players: [],
-//     map: null,
-//     bombs: [],
-//     explosions: [],
-//   });
-//   localStorage.removeItem("user"); 
-//   window.location.hash = "/"; 
-// });
+on("gameReset", () => {
+  currentPlayers
+  gameEnded = false;
+  gameInfo = '';
+  localStorage.removeItem("user"); 
+  window.location.hash = "/"; 
+  //rerenderGame(); // Rerender the game component
+});

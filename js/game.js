@@ -9,9 +9,10 @@ let gameStarted = false;
 export function Game() {
 
   console.log("Game component loaded");
-
+  
   const user = JSON.parse(localStorage.getItem("user"));
   console.log("User in Game component:", user);
+  console.log("Current players:", currentPlayers);
 
 
   if (!user) {
@@ -36,11 +37,16 @@ export function Game() {
       {
         tag: "div",
         attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
-        children: (currentPlayers || []).map(p => ({
-          tag: "span",
-          attrs: { class: "player-lives-label", style: "margin-right: 16px;" },
-          children: [`${p.nickname}: ${p.lives}`]
-        }))
+        children: (currentPlayers.length > 0)
+          ? currentPlayers.map(p => ({
+              tag: "span",
+              attrs: {
+                class: "player-lives-label",
+                style: "margin-right: 16px;",
+              },
+              children: [`${p.nickname}: ${p.lives}`],
+            }))
+          : [{ tag: "span", children: ["Waiting for players..."] }],
       },
       {
         tag: "div",
