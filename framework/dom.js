@@ -52,6 +52,7 @@ function setAttributes(el, attrs = {}) {
     return;
   }
   for (const [attr, value] of Object.entries(attrs)) {
+    if (attr === "children") continue; // don't touch children here
     if (isEvent(attr, value)) { // function event handlers
       el[attr.toLowerCase()] = value;
     } else if (isStyle(attr, value)) { // style object
@@ -65,7 +66,7 @@ function setAttributes(el, attrs = {}) {
     } else if (attr === "class" || attr === "className") { // class attribute
       el.className = value || "";
       el.setAttribute("class", value || "");
-    } else if (attr in el) { // properties
+    } else if (attr in el) {
       el[attr] = value;
     } else { // attributes
       el.setAttribute(attr === 'className' ? 'class' : attr, value);

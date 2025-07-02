@@ -29,3 +29,11 @@ export function off(eventName, handler) {
     listeners.delete(eventName);
   }
 }
+
+export function once(eventName, handler) {
+  const unsubscribe = on(eventName, (payload) => {
+    handler(payload);
+    unsubscribe(); // Unsubscribe after the first call
+  });
+  return unsubscribe;
+}

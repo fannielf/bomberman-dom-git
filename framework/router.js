@@ -7,7 +7,7 @@ const unsubscribes = []; // Array to hold unsubscribe functions for state change
 
 //initRouter function to set up the router
 export function initRouter(rootElementId) {
-  console.log('Initializing router with root element ID:', rootElementId);
+
   rootEl = document.getElementById(rootElementId); //find the root element by ID
 
   window.onhashchange = handleRouteChange; // Handle initial load and hash changes
@@ -23,12 +23,13 @@ export function addRoute(path, renderFn) {
 
 //handleRouteChange function to render the content based on the current route
 function handleRouteChange() {
-  console.log('Route changed:', location.hash);
   const path = location.hash.replace('#', '') || '/';
   const renderFn = routes.get(path); //get the function for the path
-  console.log('Render function for path:', path, renderFn);
 
   if (renderFn && rootEl) {
+    // Clear previous content and unsubscribe from previous state changes
+    unsubscribes.forEach(unsub => unsub()); // Unsubscribe from previous state changes
+    unsubscribes.length = 0; // Clear the array of unsubscribe functions
 
     render(renderFn(), rootEl); // Render the virtual node to the root element
 

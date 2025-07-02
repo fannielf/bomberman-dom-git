@@ -1,7 +1,10 @@
-import { getState, setState, on } from '../framework/index.js';
+import { on, render } from '../framework/index.js';
 import { sendMessage } from './ws.js';
+import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers } from './logic.js';
 
 console.log('Handlers loaded');
+let width;
+export let currentPlayers = [];
 
 on('playerJoined', ({id, nickname}) => {
   localStorage.setItem('user', JSON.stringify({ id, nickname }));
@@ -9,18 +12,10 @@ on('playerJoined', ({id, nickname}) => {
   sendMessage({ type: 'lobby', id });
 });
 
-
-// Handle game start message
-on('gameStarted', ({ map }) => {
-  setState({ map });
-});
-
-
 on('showError', (message) => {
   const errorEl = document.getElementById('error');
   if (errorEl) errorEl.textContent = message;
 })
-
 
 on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
 
@@ -41,11 +36,13 @@ on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
 
   const chatContainer = document.getElementById('chat');
   if (chatContainer && chatContainer.innerHTML === '') {
-    chatHistory.forEach(entry => {
-      const div = document.createElement('div');
-      div.textContent = `${entry.nickname}: ${entry.message}`;
-      chatContainer.appendChild(div);
-    });
+    if (chatHistory) {
+      chatHistory.forEach(entry => {
+        const div = document.createElement('div');
+        div.textContent = `${entry.nickname}: ${entry.message}`;
+        chatContainer.appendChild(div);
+      });
+    }
   }
 
   // update game full status
@@ -53,7 +50,6 @@ on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
   if (errorEl) errorEl.textContent = gameFull ? 'Game is full' : '';
 
 });
-
 
 // Add countdown handler
 on('readyTimer', ({ countdown }) => {
@@ -63,22 +59,59 @@ on('readyTimer', ({ countdown }) => {
   }
 });
 
-// Handle player elimination when they lose all lives
-on("deActivePlayer", ({ id }) => {
-  const { players } = getState();
-  const newPlayers = players.map((p) => {
-    if (p.id === id) {
-      return {
-        ...p,
-        lives: 0,
-        alive: false,
-        position: null,
-      };
-    }
-    return p;
+// Handle game start message
+on("gameStarted", ({ map, players, chatHistory }) => {
+  currentPlayers = players;
+  width = map.width; // Store the width for rendering players
+  renderStaticBoard(map);
+  renderPlayers(players, map.width);
+  startGame();
+
+  const chatContainer = document.getElementById('chat');
+  if (chatContainer && chatContainer.innerHTML === '') {
+      chatHistory.forEach(entry => {
+      const div = document.createElement('div');
+      div.textContent = `${entry.nickname}: ${entry.message}`;
+      chatContainer.appendChild(div);
+    });
+  }
 });
-  console.log("players after elimination:", newPlayers);
-  setState({ players: newPlayers });
+
+// Handle player movement updates from the server
+on("playerMoved", ({ id, position}) => {
+  updatePlayerPosition(id, position); 
+});
+
+// Handle bomb placement
+on("bombPlaced", ({ bomb }) => {
+  placeBomb(bomb);
+});
+
+// Handle explosion
+on("explosion", ({ explosion }) => {
+  showExplosion(explosion);
+});
+
+// Handle player updates (e.g., losing a life)
+on("playerUpdate", ({ player }) => {
+  if (player.lives <= 0 || player.alive === false) {
+    return;
+  }
+  updatePlayer(player);
+});
+
+// Handle player elimination when they lose all lives
+on("deActivatePlayer", ({ id }) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (!gameEnded && user.id === id) {
+    // create a div to show the message
+    const container = document.createElement("div");
+    container.id = "elimination-message";
+    container.innerHTML = "You are out of lives! You can still watch and chat.";
+    document.body.appendChild(container); // body or game container?
+  }
+
 });
 
 on("leaveGame", ({ id }) => {
@@ -90,18 +123,35 @@ on("leaveGame", ({ id }) => {
 
 // Handle game end
 on("gameEnded", ({ winner }) => {
-  setState({ gameInfo: `Twilight fades. The last light is: ${winner}`, gameEnded: true });
+  if (gameEnded) return; // Prevent multiple game end messages
+  gameEnded = true;
+  const gameOver = document.createElement("div");
+  gameOver.id = "game-over";
+  gameOver.innerHTML = `Game Over! Winner: ${winner}. <br> <button onclick="window.location.hash = '/'">Back to Menu</button>`;
+  document.body.appendChild(gameOver);
 });
 
-on("gameReset", () => {
-  setState({ 
-    gameInfo: '', 
-    gameEnded: false,
-    players: [],
-    map: null,
-    bombs: [],
-    explosions: [],
-  });
-  localStorage.removeItem("user"); 
-  window.location.hash = "/"; 
+on ("gameUpdate", ({ gameState, players, chatHistory }) => {
+  // Update the game state, players, and chat history when reloaded
+  currentPlayers = players;
+  renderStaticBoard(gameState.map);
+  renderPlayers(players, gameState.map.width);
+  renderChatHistory(chatHistory);
 });
+
+on("sendMessage", ({ msg }) => {
+  sendMessage(msg);
+});
+
+// on("gameReset", () => {
+//   setState({ 
+//     gameInfo: '', 
+//     gameEnded: false,
+//     players: [],
+//     map: null,
+//     bombs: [],
+//     explosions: [],
+//   });
+//   localStorage.removeItem("user"); 
+//   window.location.hash = "/"; 
+// });

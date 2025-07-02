@@ -35,28 +35,21 @@ export function handleJoin(id, ws, data) {
 
 export function readyTimer() {
     if (clients.size === 2 && !waitTimer) {
-          firstJoinTime = Date.now(); // Record the time of the first join
-          waitTimer = setInterval(() => {
-            if (clients.size === 0) {
-              clearInterval(waitTimer);
-              waitTimer = null;
-              firstJoinTime = null;
-            } else if (clients.size === 4) { // If 4 players have joined, start the countdown
-              statusCountdown();
-            } else if (Date.now() - firstJoinTime > 20000) { // If no new joins after 20 seconds, reset
-              if (clients.size >= 2) {
-              statusCountdown();
-            } else {
-              console.log("Resetting lobby due to inactivity");
-              broadcast({ type: 'lobbyReset' }); // Notify all clients about the reset
-              clients.clear(); // Clear all clients
-              clearInterval(waitTimer);
-              waitTimer = null;
-              firstJoinTime = null; // Reset first join time
-            }
-            }
-          }, 1000); // Check every second
+      firstJoinTime = Date.now(); // Record the time of the first join
+      waitTimer = setInterval(() => {
+        if (clients.size < 2) {
+          clearInterval(waitTimer);
+          waitTimer = null;
+          firstJoinTime = null;
+        } else if (clients.size === 4) { // If 4 players have joined, start the countdown
+          statusCountdown();
+        } else if (Date.now() - firstJoinTime > 2000) { // If no new joins after 20 seconds, reset
+          if (clients.size >= 2) {
+          statusCountdown();
+          }
         }
+      }, 1000); // Check every second
+    }
 }
 
 

@@ -19,6 +19,5 @@ export function subscribe(callback) {
 
 // Reset the state and clear all subscribers
 export function resetState() {
-  state = {};
   subscribers.clear();
 }

@@ -1,5 +1,5 @@
 import { chatHistory } from "../handlers/chat.js";
-import { broadcast } from "../handlers/connection.js";
+import { broadcast, clients } from "../handlers/connection.js";
 
 const players = new Map();
 const playerPositions = [];
@@ -12,7 +12,7 @@ const gameState = {
     // Game map configuration
     width: 0,
     height: 0,
-    tiles: [], // 2D array of 'empty' | 'wall' | 'block'
+    tiles: [], // 2D array of 'empty' | 'wall' | 'destructible-wall'
     powerUps: [], // [{x, y, type}]
   },
   bombs: [],
@@ -46,6 +46,7 @@ function addPlayer(client) {
     bombRange: 1, // Default bomb range
     bombCount: 1, // Default bomb count
   });
+
 }
 
 function removePlayer(id) {
@@ -57,7 +58,7 @@ function removePlayer(id) {
   }
 }
 
-export function deActivePlayer(id) {
+export function deActivatePlayer(id) {
   const player = players.get(id);
   if (!player) return;
   player.alive = false;
@@ -79,7 +80,7 @@ function looseLife(id) {
     player.alive = false;
     player.position = null; // Remove position if player is eliminated
     //removePlayer(id); // Remove player if lives reach 0
-    broadcast({ type: "deActivePlayer", nickname: player.nickname, id: player.id });
+    broadcast({ type: "deActivatePlayer", nickname: player.nickname, id: player.id });
     checkGameEnd();
   } else {
     broadcast({ type: "playerUpdate", player: { id: player.id, lives: player.lives } });
@@ -196,16 +197,16 @@ function explodeBomb(bombId) {
     updatedMap: gameState.map,
   });
 
-  // Remove the explosion visual after a short time
-  setTimeout(() => {
-    const explosionIndex = gameState.explosions.findIndex(
-      (e) => e.id === explosion.id
-    );
-    if (explosionIndex !== -1) {
-      gameState.explosions.splice(explosionIndex, 1);
-      broadcast({ type: "explosionEnded", explosionId: explosion.id });
-    }
-  }, 500);
+  // // Remove the explosion visual after a short time
+  // setTimeout(() => {
+  //   const explosionIndex = gameState.explosions.findIndex(
+  //     (e) => e.id === explosion.id
+  //   );
+  //   if (explosionIndex !== -1) {
+  //     gameState.explosions.splice(explosionIndex, 1);
+  //     broadcast({ type: "explosionEnded", explosionId: explosion.id });
+  //   }
+  // }, 500);
 }
 
 function getPlayerState(id) {
@@ -245,9 +246,10 @@ function handlePlayerMove(id, direction) {
   }
 
   if (isPositionValid(newPosition)) {
+    const oldPosition = player.position;
     player.position = newPosition;
     // Broadcast the move to all clients
-    broadcast({ type: "playerMoved", id, position: newPosition });
+    broadcast({ type: "playerMoved", id, position: newPosition, oldPosition });
   }
 }
 
@@ -307,14 +309,17 @@ function startCountdown() {
     broadcast({ type: "readyTimer", countdown });
 
     if (countdown <= 0) {
+      if (players.size < 2) {
+        // reset countdown
+      }
       clearInterval(readyTimer);
+      broadcast({ type: "gameState" });
       readyTimer = null;
-      startGame();
     }
-  }, 1000);
+  }, 10);
 }
 
-function startGame() {
+export function startGame() {
   gameState.status = "running";
   // Send the map to clients
   broadcast({
@@ -382,6 +387,16 @@ function getPlayerPositions() {
   return positions;
 }
 
+function resetGameState() {
+  players.clear();
+  clients.clear();
+  gameState.status = "waiting";
+  gameState.players = {};
+  gameState.bombs = [];
+  gameState.explosions = [];
+  gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
+}
+
 function checkGameEnd() {
   const alivePlayers = Array.from(players.values()).filter(p => p.alive);
   if (alivePlayers.length === 1) {
@@ -391,23 +406,9 @@ function checkGameEnd() {
       type: "gameEnded",
       winner: winner.nickname,
     });
-    
     chatHistory.length = 0; // Clear chat when game ends
-  }
-}
 
-function resetGameState() {
-  players.clear();
-  gameState.status = "waiting";
-  playerPositions.length = 0;
-  gameState.players = {};
-  gameState.bombs = [];
-  gameState.explosions = [];
-  gameState.map = {
-    width: 0,
-    height: 0,
-    tiles: [],
-    powerUps: [],
-  };
+    setTimeout(resetGameState, 2000);
+  }
 }
 
