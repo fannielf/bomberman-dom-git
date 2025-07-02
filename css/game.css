@@ -117,3 +117,23 @@ body {
     font-size: 2em;
     text-align: center;
 }
+
+/* Add this to your existing CSS: */
+
+.power-up {
+    width: 60px;
+    height: 60px;
+    background-image: url('../assets/powerup_bomb.png');
+    background-size: cover;
+    background-position: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}

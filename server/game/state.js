@@ -41,8 +41,8 @@ function addPlayer(client) {
     speed: 1, // Default speed
     bombRange: 1, // Default bomb range
     bombCount: 1, // Default bomb count
+    tempPowerUps: [],
   });
-
 }
 
 function removePlayer(id) {
@@ -72,10 +72,17 @@ function looseLife(id) {
     player.position = null; // Remove position if player is eliminated
     console.log("AFTER ELIMINATION", player);
     //removePlayer(id); // Remove player if lives reach 0
-    broadcast({ type: "playerEliminated", nickname: player.nickname, id: player.id });
+    broadcast({
+      type: "playerEliminated",
+      nickname: player.nickname,
+      id: player.id,
+    });
     checkGameEnd();
   } else {
-    broadcast({ type: "playerUpdate", player: { id: player.id, lives: player.lives } });
+    broadcast({
+      type: "playerUpdate",
+      player: { id: player.id, lives: player.lives },
+    });
   }
 }
 
@@ -84,10 +91,15 @@ function handlePlaceBomb(playerId) {
   if (!player || !player.alive) return;
 
   // Check if player has an active bomb already
+  // Calculate total bombs allowed (base + temporary power-ups)
+  const totalBombCount = player.bombCount + 
+    player.tempPowerUps.filter(p => p.type === "bomb").reduce((sum, p) => sum + p.effect, 0);
+  
   const activeBombs = gameState.bombs.filter(
     (b) => b.ownerId === playerId
   ).length;
-  if (activeBombs >= player.bombCount) {
+  
+  if (activeBombs >= totalBombCount) {
     return;
   }
 
@@ -139,12 +151,7 @@ function explodeBomb(bombId) {
     const x = bomb.position.x + dir.x;
     const y = bomb.position.y + dir.y;
 
-    if (
-      y < 0 ||
-      y >= gameState.map.height ||
-      x < 0 ||
-      x >= gameState.map.width
-    )
+    if (y < 0 || y >= gameState.map.height || x < 0 || x >= gameState.map.width)
       continue;
 
     const tile = gameState.map.tiles[y][x];
@@ -154,6 +161,16 @@ function explodeBomb(bombId) {
 
     if (tile === "destructible-wall") {
       gameState.map.tiles[y][x] = "empty";
+
+      // 30% chance to spawn bomb power-up
+      if (Math.random() < 0.3) {
+        gameState.map.powerUps.push({
+          id: crypto.randomUUID(),
+          type: "bomb",
+          x: x,
+          y: y,
+        });
+      }
     }
   }
 
@@ -168,9 +185,9 @@ function explodeBomb(bombId) {
   }
 
   // renew the lives and status of players hit by the explosion
-    for (const player of hitPlayers) {
-      looseLife(player.id);
-    }
+  for (const player of hitPlayers) {
+    looseLife(player.id);
+  }
 
   const explosion = {
     id: crypto.randomUUID(),
@@ -241,7 +258,45 @@ function handlePlayerMove(id, direction) {
   if (isPositionValid(newPosition)) {
     const oldPosition = player.position;
     player.position = newPosition;
-    // Broadcast the move to all clients
+
+    // Check for power-up pickup
+    const powerUpIndex = gameState.map.powerUps.findIndex(
+      (p) => p.x === newPosition.x && p.y === newPosition.y
+    );
+
+    if (powerUpIndex !== -1) {
+      const powerUp = gameState.map.powerUps[powerUpIndex];
+
+      if (powerUp.type === "bomb") {
+        // Add temporary power-up effect
+        const tempPowerUp = {
+          id: crypto.randomUUID(),
+          type: "bomb",
+          effect: 1,
+          startTime: Date.now()
+        };
+        
+        player.tempPowerUps.push(tempPowerUp);
+        
+        // Remove power-up after 2 seconds
+        setTimeout(() => {
+          const index = player.tempPowerUps.findIndex(p => p.id === tempPowerUp.id);
+          if (index !== -1) {
+            player.tempPowerUps.splice(index, 1);
+          }
+        }, 2000);
+      }
+
+      gameState.map.powerUps.splice(powerUpIndex, 1);
+
+      broadcast({
+        type: "powerUpPickup",
+        playerId: id,
+        powerUpId: powerUp.id,
+        newPowerUps: gameState.map.powerUps,
+      });
+    }
+
     broadcast({ type: "playerMoved", id, position: newPosition, oldPosition });
   }
 }
@@ -335,7 +390,7 @@ function generateGameMap() {
       // 1. Set outer walls.
       if (row === 0 || row === height - 1 || col === 0 || col === width - 1) {
         tiles[row][col] = "wall";
-      // 2. Clear spawn corners. This must happen before pillar or destructible walls are placed.
+        // 2. Clear spawn corners. This must happen before pillar or destructible walls are placed.
       } else if (
         (row <= 2 && col <= 2) ||
         (row <= 2 && col >= width - 3) ||
@@ -343,13 +398,13 @@ function generateGameMap() {
         (row >= height - 3 && col >= width - 3)
       ) {
         tiles[row][col] = "empty";
-      // 3. Set inner "pillar" walls.
+        // 3. Set inner "pillar" walls.
       } else if (row % 2 === 0 && col % 2 === 0) {
         tiles[row][col] = "wall";
-      // 4. Place random destructible walls.
+        // 4. Place random destructible walls.
       } else if (Math.random() < 0.3) {
         tiles[row][col] = "destructible-wall";
-      // 5. Fill the rest with empty space.
+        // 5. Fill the rest with empty space.
       } else {
         tiles[row][col] = "empty";
       }
@@ -362,7 +417,6 @@ function generateGameMap() {
     powerUps: [],
   };
 }
-
 
 function getPlayerPositions() {
   const width = 15;
@@ -390,7 +444,7 @@ function resetGameState() {
 }
 
 function checkGameEnd() {
-  const alivePlayers = Array.from(players.values()).filter(p => p.alive);
+  const alivePlayers = Array.from(players.values()).filter((p) => p.alive);
   if (alivePlayers.length === 1) {
     const winner = alivePlayers[0];
     gameState.status = "ended";
