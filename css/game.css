@@ -1,16 +1,61 @@
-#game-board {
-    display: grid;
-    grid-template-columns: repeat(15, 60px);
-    grid-template-rows: repeat(13, 60px);
+@import url('https://fonts.cdnfonts.com/css/twilight');
+
+#title {
+    font-family: 'Twilight', sans-serif;
+    font-size: 5em;
+    font-weight: lighter;
+    color: #fff;
+    text-align: center;
+    margin-top: 20px;
+}
+
+#info-text {
+    font-family: 'Twilight', sans-serif;
+    font-size: 2em;
+    color: #fff;
+    text-align: center;
+}
+
+#nickname-input {
+    font-size: 1em;
+    padding: 10px;
+    width: 250px;
     margin: 20px auto;
-    width: fit-content;
+    display: block;
+    border: none;
+    border-radius: 5px;
+}
+
+#join-btn {
+    font-size: 1em;
+    padding: 8px 16px;
+    background-color: #4f6754;
+    color: #fff;
+    border: solid 1px #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    display: block;
+    margin: 20px auto;
+}
+
+h2 {
+    font-family: 'Twilight', sans-serif;
+    color: #fff;
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(15, 60px);
+  grid-template-rows: repeat(13, 60px);
+  margin: 20px auto;
+  width: fit-content;
 }
 
 .cell {
-    width: 60px;
-    height: 60px;
-    background-color: #d9d9d9;
-    position: relative;
+  width: 60px;
+  height: 60px;
+  background-color: #d9d9d9;
+  position: relative;
 }
 
 .wall {
@@ -18,7 +63,6 @@
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    /* position: absolute; */
 }
 
 .destructible-wall {
@@ -26,7 +70,6 @@
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    /* position: absolute; */
     z-index: 5;
 }
 
@@ -36,104 +79,227 @@
     background-size: cover;
     background-position: center;
     
-    border: none; /* remove border if not needed */
-    border-radius: 0; /* remove if your image isn't circular */
-    /* position: absolute; */
+    border: none;
+    border-radius: 0;
     top: 0px;
     left: 0px;
     z-index: 10;
 }
 
 .player1 {
-    background-image: url('../assets/player1.png');
+  background-image: url("../assets/player1.png");
 }
 .player2 {
-    background-image: url('../assets/player2.png');
+  background-image: url("../assets/player2.png");
 }
 .player3 {
-    background-image: url('../assets/player3.png');
+  background-image: url("../assets/player3.png");
 }
 .player4 {
-    background-image: url('../assets/player4.png');
+  background-image: url("../assets/player4.png");
 }
 
 .bomb {
-    width: 60px;
-    height: 60px;
-    background-image: url('../assets/bomb.png'); /* your image path here */
-    background-size: cover;
-    background-position: center;
-    position: absolute;
-    top: 1px;
-    left: 1px;
-    z-index: 9;
+  width: 60px;
+  height: 60px;
+  background-image: url("../assets/bomb.png"); /* your image path here */
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  z-index: 9;
 }
 
 .explosion {
-    background-color: rgba(255, 0, 0, 0.5);
-    width: 60px;
-    height: 60px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 20;
-    animation: explosion-animation 0.5s forwards;
+  background-color: rgba(255, 0, 0, 0.5);
+  width: 60px;
+  height: 60px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  animation: explosion-animation 0.5s forwards;
 }
 
 body {
-    background-image: url('../assets/woods.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    height: 100vh;
-    margin: 0;
+  background-image: url("../assets/woods.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#elimination-message {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #333;
+  padding: 32px;
+  z-index: 1000;
+  font-size: 2em;
+  text-align: center;
+}
+
+#game-over {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #333;
+  padding: 32px;
+  z-index: 1000;
+  font-size: 2em;
+  text-align: center;
+}
+
+#game-page-container {
+    position: relative;
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-#elimination-message {
+#chat-area {
     position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 2px solid #333;
-    padding: 32px;
-    z-index: 1000;
-    font-size: 2em;
-    text-align: center;
+    left: 20px;
+    bottom: 0;
+    z-index: 1001;
+    transition: transform 0.3s ease-in-out;
 }
 
-#game-over {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 2px solid #333;
-    padding: 32px;
+#chat-area.collapsed {
+    transform: translateY(calc(100% - 40px)); /* Show only the toggle (40px height) */
+}
+
+#chat-toggle {
+    width: 320px;
+    height: 40px;
+    background-color: #486448;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-size: 24px;
+}
+
+#chat-container {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    margin-top: 0;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
     z-index: 1000;
-    font-size: 2em;
-    text-align: center;
+    border-left: none;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+#chat {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-message {
+    background-color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 18px;
+    border-top-left-radius: 4px;
+    max-width: 80%;
+    align-self: flex-start;
+    word-wrap: break-word;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.chat-message.my-message {
+    background-color: #8cc18c;
+    align-self: flex-end;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 4px;
+}
+
+.chat-nickname {
+    font-weight: bold;
+    color: #486448;
+    margin-right: 5px;
+}
+
+.chat-text {
+    color: #333;
+}
+
+#chat-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#send-chat {
+    padding: 8px 12px;
+    border: none;
+    background-color: #486448;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#send-chat:hover {
+    background-color: #5c805c;
 }
 
 /* Add this to your existing CSS: */
 
 .power-up {
-    width: 60px;
-    height: 60px;
-    background-image: url('../assets/powerup_bomb.png');
-    background-size: cover;
-    background-position: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 5;
-    animation: pulse 1s infinite;
+  width: 60px;
+  height: 60px;
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  animation: pulse 1s infinite;
+}
+
+/* Bomb power-up*/
+.power-up[data-powerup-type="bomb"] {
+  background-image: url("../assets/powerup_bomb.png");
+}
+
+/* Flame power-up*/
+.power-up[data-powerup-type="flame"] {
+  background-image: url("../assets/powerup_range.png");
+}
+
+/* Speed power-up*/
+.power-up[data-powerup-type="speed"] {
+  background-image: url("../assets/powerup_speed.png");
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
