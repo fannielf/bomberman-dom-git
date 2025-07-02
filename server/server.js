@@ -76,7 +76,7 @@ server.on('connection', ws => {
           if (data.page === '/lobby') {
             sendLobbyUpdate(ws); // Send updated player count and list
           } else if (data.page === '/game') {
-            sendGameUpdate(ws); // Send game update to the client
+            startGame(ws); // Send game state to the client
           }
         } else {
           sendMsg(ws, 'error', { message: 'Client not found by id' });

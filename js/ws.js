@@ -74,7 +74,7 @@ function connect() {
         emit('playerEliminated', { id: msg.id, nickname: msg.nickname });
         break;
     case 'gameUpdate':
-        emit('gameUpdate', {gameState: msg.gameState, players: msg.players, chatHistory: msg.chatHistory });
+        emit('gameUpdate', { gameState: msg.gameState, players: msg.players, chatHistory: msg.chatHistory });
         break;
     case 'gameEnded':
         emit('gameEnded', { winner: msg.winner });
@@ -100,6 +100,5 @@ export function sendMessage(message) {
 // resest to start page
 function reset() {
     localStorage.removeItem('user'); // Remove user from local storage
-    // setState({ page: '/' });
     window.location.hash = '/'; // Redirect to start page
 }
