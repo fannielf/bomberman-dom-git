@@ -65,7 +65,7 @@ function connect() {
         emit('bombPlaced', { bomb: msg.bomb });
         break;
     case 'explosion':
-        emit('explosion', { bombId: msg.bombId, explosion: msg.explosion, updatedMap: msg.updatedMap });
+        emit('explosion', { bombId: msg.bombId, explosion: msg.explosion, updatedMap: msg.updatedMap, players: msg.players });
         break;
     case 'playerUpdate':
         emit('playerUpdate', { player: msg.player });
