@@ -76,7 +76,7 @@ export function stopGame() {
 
 export function renderStaticBoard(map) {
   const board = document.getElementById("game-board");
-  //board.innerHTML = "";
+  board.innerHTML = "";
   for (let y = 0; y < map.height; y++) {
     for (let x = 0; x < map.width; x++) {
       const cell = document.createElement("div");
@@ -104,44 +104,34 @@ export function renderPlayers(players, width) {
 }
 
 export function showExplosion(explosion) {
-  
-  const { x, y, range, id } = explosion;
   const board = document.getElementById("game-board");
-  const cells = board.querySelectorAll(".cell");
+  if (!board) return;
 
-  for (let i = -range; i <= range; i++) {
-    const col = x + i;
-    const row = y;
-    const index = row * colLength + col;
+  // Use the tiles from the server's explosion data
+  explosion.tiles.forEach(tile => {
+    const { x, y } = tile;
+    const cell = board.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
+    if (cell) {
+      const explosionEl = document.createElement("div");
+      explosionEl.className = `explosion explosion-${explosion.id}`;
+      cell.appendChild(explosionEl);
 
-    const cell = cells[index];
-    if (!cell) continue;
-
-    const explosionEl = document.createElement("div");
-    explosionEl.className = `explosion explosion-${id}`;
-    cell.appendChild(explosionEl);
-  }
-
-  // Remove destructible walls in explosion range
-  for (let i = -range; i <= range; i++) {
-    const col = x + i;
-    const row = y;
-    const index = row * colLength + col;
-    const cell = cells[index];
-    if (cell && cell.classList.contains("destructible-wall")) {
-      cell.classList.remove("destructible-wall");
-      cell.classList.add("empty"); // Change to empty after explosion
+      // If a destructible wall was there, remove its class
+      if (cell.classList.contains("destructible-wall")) {
+        cell.classList.remove("destructible-wall");
+      }
     }
-  }
+  });
 
-  // Remove explosion after short delay
+  // Remove explosion visual after a short delay
   setTimeout(() => {
-    board.querySelectorAll(`.explosion-${id}`).forEach(el => el.remove());
-  }, 300);
+    board.querySelectorAll(`.explosion-${explosion.id}`).forEach(el => el.remove());
+  }, 500); // Keep visible for 0.5 seconds
 }
 
 export function placeBomb(bomb) {
-  const { x, y, id } = bomb;
+  const { position, id } = bomb;
+  const { x, y } = position;
   const board = document.getElementById("game-board");
   if (!board) return;
 
