@@ -4,7 +4,6 @@ import { clients, broadcast, sendMsg, updateConnection } from './handlers/connec
 import { handleJoin, readyTimer } from './handlers/main.js';
 import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby update function
 import { handleNewChat } from './handlers/chat.js'; // Import chat handling function
-import { sendGameUpdate } from './handlers/game.js'; // Import game update function
 
 const server = new WebSocketServer({ port: 8080 });
 let count = 0;
@@ -18,7 +17,7 @@ server.on('connection', ws => {
     try { 
       data = JSON.parse(msg)
     } catch {
-      sendMsg(ws, 'error', { message: 'Invalid JSON' });
+      sendMsg(ws, { type: 'error', message: 'Invalid JSON' });
       return;
     }
 
@@ -26,10 +25,10 @@ server.on('connection', ws => {
     console.log('Received message:', data);
 
     if (data.type !== 'join' && data.type !== 'gameStart' && id === null) { // Check if id is provided for non-join messages
-      sendMsg(ws, 'error', { message: 'Missing playerID' });
+      sendMsg(ws, { type: 'error', message: 'Missing playerID' });
       return;
     } else if (!clients.has(id) && data.type !== 'join' && data.type !== 'gameStart') { // Check if client exists
-      sendMsg(ws, 'error', { message: 'Client not found by id' });
+      sendMsg(ws, { type: 'reset' });
       return;
     }
 
@@ -88,7 +87,7 @@ server.on('connection', ws => {
         clients.delete(id); // Remove client from the map
 
       default: // Handle unknown message types
-        sendMsg(ws, 'error', { message: 'Unknown message type' });
+        sendMsg(ws, { type: 'error', message: 'Unknown message type' });
         return;
     }
   });

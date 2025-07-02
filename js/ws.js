@@ -17,6 +17,9 @@ function connect() {
     const msg = JSON.parse(event.data);
     console.log("message received:", msg)
     switch (msg.type) {
+    case 'reset' :
+        reset();
+        break;
     case 'readyTimer': // Add this case
         emit('readyTimer', { countdown: msg.countdown });
         break;
