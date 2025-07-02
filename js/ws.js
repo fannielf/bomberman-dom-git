@@ -66,8 +66,8 @@ function connect() {
     case 'playerUpdate':
         emit('playerUpdate', { player: msg.player });
         break;
-    case 'playerEliminated':
-        emit('playerEliminated', { id: msg.id, nickname: msg.nickname });
+    case 'deActivePlayer':
+        emit('deActivePlayer', { id: msg.id, nickname: msg.nickname });
         break;
     case 'gameEnded':
         emit('gameEnded', { winner: msg.winner });

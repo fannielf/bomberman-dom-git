@@ -22,6 +22,10 @@ const gameState = {
 
 // adding a player to the game
 function addPlayer(client) {
+  if (!client || !client.id) {
+    console.error("addPlayer: client or client.id is undefined", client);
+    return;
+  }
   if (
     players.has(client.id) ||
     players.size >= 4 ||
@@ -46,6 +50,7 @@ function addPlayer(client) {
 
 function removePlayer(id) {
   players.delete(id);
+  checkGameEnd();
 }
 
 export function deActivePlayer(id) {
@@ -69,9 +74,8 @@ function looseLife(id) {
     player.lives = 0; // Ensure lives don't go negative
     player.alive = false;
     player.position = null; // Remove position if player is eliminated
-    console.log("AFTER ELIMINATION", player);
     //removePlayer(id); // Remove player if lives reach 0
-    broadcast({ type: "playerEliminated", nickname: player.nickname, id: player.id });
+    broadcast({ type: "deActivePlayer", nickname: player.nickname, id: player.id });
     checkGameEnd();
   } else {
     broadcast({ type: "playerUpdate", player: { id: player.id, lives: player.lives } });
@@ -278,6 +282,7 @@ export {
   startCountdown,
   handlePlayerMove,
   handlePlaceBomb,
+  resetGameState,
 };
 
 // New functions for game management
@@ -382,5 +387,25 @@ function checkGameEnd() {
       type: "gameEnded",
       winner: winner.nickname,
     });
+    setTimeout(() => {
+      resetGameState();
+      broadcast({ type: "gameReset" });
+    }, 2000);
   }
 }
+
+function resetGameState() {
+  players.clear();
+  gameState.status = "waiting";
+  playerPositions.length = 0;
+  gameState.players = {};
+  gameState.bombs = [];
+  gameState.explosions = [];
+  gameState.map = {
+    width: 0,
+    height: 0,
+    tiles: [],
+    powerUps: [],
+  };
+}
+

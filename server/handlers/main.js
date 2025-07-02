@@ -28,7 +28,7 @@ export function handleJoin(id, ws, data) {
     // if game is full, start countdown
     if (clients.size === 4) {
       startCountdown();
-      addPlayer();
+      addPlayer(clients.get(id)); // Add player to the game state
     }
   }
 }

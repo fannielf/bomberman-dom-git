@@ -2,9 +2,6 @@ import { sendMessage } from "./ws.js";
 import { Chat } from "./chat.js";
 import { setState, getState, on } from "../framework/index.js";
 
-window.setState = setState; //for testing purposes, remove later
-window.getState = getState; //for testing purposes, remove later
-
 setState({
   gameInfo: "",
   map: null,
@@ -105,7 +102,7 @@ export function Game() {
     children: [
       {
         tag: "h2",
-        children: ["Bomberman"],
+        children: ["Twilight Inferno"],
       },
       {
         tag: "div",
@@ -128,7 +125,7 @@ export function Game() {
         children: map ? renderGameBoard(map, players, bombs, explosions) : [],
       },
       // player is dead and there are other players alive
-      (!gameEnded && me && me.lives === 0 && players.length > 2) && {
+      (!gameEnded && me && me.lives === 0 && players.filter(p => p.alive).length > 1) && {
         tag: "div",
         attrs: {
           style: `
@@ -156,7 +153,7 @@ export function Game() {
             top: 30%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(119, 30, 30, 0.9);
+            background: rgba(255, 255, 255, 0.84);
             border: 1px solid rgba(105, 103, 103, 0.5);
             padding: 32px;
             z-index: 1000;
@@ -167,8 +164,20 @@ export function Game() {
         children: [
           `${gameInfo}`,
           { tag: "br" },
-          { tag: "button", attrs: { onclick: () => window.location.hash = "/" }, children: ["Back to Menu"] }
-        ]
+          { 
+            tag: "button", 
+            attrs: { 
+              onclick: () => {
+                const user = JSON.parse(localStorage.getItem("user"));
+                if (user) {
+                  sendMessage({ type: "leaveGame", id: user.id });
+                  localStorage.removeItem("user");
+                }
+                window.location.hash = "/";
+              }
+            }, 
+            children: ["Back to the start"] 
+          }        ]
       },
       {
         tag: "button",

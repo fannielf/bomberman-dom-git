@@ -1,4 +1,4 @@
-import { setState, on } from '../framework/index.js';
+import { getState, setState, on } from '../framework/index.js';
 import { sendMessage } from './ws.js';
 
 console.log('Handlers loaded');
@@ -64,9 +64,8 @@ on('readyTimer', ({ countdown }) => {
 });
 
 // Handle player elimination when they lose all lives
-on("playerEliminated", ({ id, nickname }) => {
+on("deActivePlayer", ({ id }) => {
   const { players } = getState();
-  console.log("players before elimination:", players);
   const newPlayers = players.map((p) => {
     if (p.id === id) {
       return {
@@ -82,7 +81,27 @@ on("playerEliminated", ({ id, nickname }) => {
   setState({ players: newPlayers });
 });
 
+on("leaveGame", ({ id }) => {
+  removePlayer(id);
+  if (players.size === 0) {
+    resetGameState(); 
+  }
+});
+
 // Handle game end
 on("gameEnded", ({ winner }) => {
   setState({ gameInfo: `Twilight fades. The last light is: ${winner}`, gameEnded: true });
+});
+
+on("gameReset", () => {
+  setState({ 
+    gameInfo: '', 
+    gameEnded: false,
+    players: [],
+    map: null,
+    bombs: [],
+    explosions: [],
+  });
+  localStorage.removeItem("user"); 
+  window.location.hash = "/"; 
 });
