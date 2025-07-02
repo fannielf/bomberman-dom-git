@@ -1,4 +1,4 @@
-import { on, render } from '../framework/index.js';
+import { on, render, setState, getState } from '../framework/index.js';
 import { sendMessage } from './ws.js';
 import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers } from './logic.js';
 
@@ -15,6 +15,28 @@ on('showError', (message) => {
   const errorEl = document.getElementById('error');
   if (errorEl) errorEl.textContent = message;
 })
+
+function appendChatMessage(nickname, message) {
+  const chatContainer = document.getElementById('chat');
+  if (chatContainer) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('chat-message');
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.nickname === nickname) {
+      messageElement.classList.add('my-message');
+    }
+
+    // Use innerHTML to allow for styling of nickname and message separately
+    messageElement.innerHTML = `<span class="chat-nickname">${nickname}:</span> <span class="chat-text">${message}</span>`;
+    chatContainer.appendChild(messageElement);
+    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
+  }
+}
+
+on('newChat', ({ nickname, message }) => {
+  appendChatMessage(nickname, message);
+});
 
 on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
 
@@ -37,9 +59,7 @@ on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
   if (chatContainer && chatContainer.innerHTML === '') {
     if (chatHistory) {
       chatHistory.forEach(entry => {
-        const div = document.createElement('div');
-        div.textContent = `${entry.nickname}: ${entry.message}`;
-        chatContainer.appendChild(div);
+        appendChatMessage(entry.nickname, entry.message);
       });
     }
   }
@@ -68,9 +88,7 @@ on("gameStarted", ({ map, players, chatHistory }) => {
   const chatContainer = document.getElementById('chat');
   if (chatContainer && chatContainer.innerHTML === '') {
       chatHistory.forEach(entry => {
-      const div = document.createElement('div');
-      div.textContent = `${entry.nickname}: ${entry.message}`;
-      chatContainer.appendChild(div);
+        appendChatMessage(entry.nickname, entry.message);
     });
   }
 });
@@ -134,7 +152,13 @@ on ("gameUpdate", ({ gameState, players, chatHistory }) => {
   // Update the game state, players, and chat history when reloaded
   renderStaticBoard(gameState.map);
   renderPlayers(players, gameState.map.width);
-  renderChatHistory(chatHistory);
+  
+  const chatContainer = document.getElementById('chat');
+  if (chatContainer && chatContainer.innerHTML === '') {
+    chatHistory.forEach(entry => {
+      appendChatMessage(entry.nickname, entry.message);
+    });
+  }
 });
 
 on("sendMessage", ({ msg }) => {

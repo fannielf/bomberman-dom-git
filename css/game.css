@@ -18,7 +18,6 @@
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    /* position: absolute; */
 }
 
 .destructible-wall {
@@ -26,7 +25,6 @@
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    /* position: absolute; */
     z-index: 5;
 }
 
@@ -36,9 +34,8 @@
     background-size: cover;
     background-position: center;
     
-    border: none; /* remove border if not needed */
-    border-radius: 0; /* remove if your image isn't circular */
-    /* position: absolute; */
+    border: none;
+    border-radius: 0;
     top: 0px;
     left: 0px;
     z-index: 10;
@@ -116,4 +113,109 @@ body {
     z-index: 1000;
     font-size: 2em;
     text-align: center;
+}
+
+#game-page-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#chat-area {
+    position: fixed;
+    left: 20px;
+    bottom: 0;
+    z-index: 1001;
+    transition: transform 0.3s ease-in-out;
+}
+
+#chat-area.collapsed {
+    transform: translateY(calc(100% - 40px)); /* Show only the toggle (40px height) */
+}
+
+#chat-toggle {
+    width: 320px;
+    height: 40px;
+    background-color: #486448;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-size: 24px;
+}
+
+#chat-container {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    margin-top: 0;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    border-left: none;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+#chat {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-message {
+    background-color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 18px;
+    border-top-left-radius: 4px;
+    max-width: 80%;
+    align-self: flex-start;
+    word-wrap: break-word;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.chat-message.my-message {
+    background-color: #8cc18c;
+    align-self: flex-end;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 4px;
+}
+
+.chat-nickname {
+    font-weight: bold;
+    color: #486448;
+    margin-right: 5px;
+}
+
+.chat-text {
+    color: #333;
+}
+
+#chat-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#send-chat {
+    padding: 8px 12px;
+    border: none;
+    background-color: #486448;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#send-chat:hover {
+    background-color: #5c805c;
 }
