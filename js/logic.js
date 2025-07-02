@@ -91,15 +91,18 @@ export function renderStaticBoard(map) {
 }
 
 export function renderPlayers(players, width) {
+  document.querySelectorAll(".player").forEach(div => { div.remove(); });
+
   players.forEach((p, i) => {
     if (!p.position || !p.alive) return;
     const index = p.position.y * width + p.position.x;
     const cell = document.querySelector(`#game-board .cell:nth-child(${index + 1})`);
     if (!cell) return;
 
-    cell.classList.add("player", "player" + (i + 1));
-    cell.dataset.playerClass = "player" + (i + 1);
-    cell.dataset.playerId = p.id;
+    const avatarDiv = document.createElement("div");
+    avatarDiv.classList.add("player", p.avatar);
+    avatarDiv.dataset.playerId = p.id;
+    cell.appendChild(avatarDiv);
   });
 }
 
@@ -144,15 +147,14 @@ export function placeBomb(bomb) {
 }
 
 export function updatePlayer(player) {
-  const { id, position, lives, alive } = player;
-  const board = document.getElementById("game-board");
+  const { id, position, alive } = player;
+
   const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
 
   if (!avatar || !position) return;
-  if (avatar.parentElement) {
-    avatar.parentElement.classList.toggle("alive", alive);
-    avatar.parentElement.classList.toggle("dead", !alive);
-  }
+
+  // avatar.classList.toggle("alive", alive);  // do we need this?
+  avatar.classList.toggle("dead", !alive);
   
 }
 
@@ -168,12 +170,8 @@ export function updatePlayerPosition(id, position) {
   const board = document.getElementById("game-board");
   if (!board) return;
 
-  const cell = document.querySelector(`.cell.player[data-player-id="${id}"]`);
-  if (!cell) return;
-  const playerClass = cell.dataset.playerClass;
-  if (!playerClass) return;
-  const playerId = cell.dataset.playerId;
-  if (!playerId) return;
+  const avatarDiv = document.querySelector(`.player[data-player-id="${id}"]`);
+  if (!avatarDiv) return;
   
   const newCell = board.querySelector(
     `.cell[data-row="${position.y}"][data-col="${position.x}"]`
@@ -181,16 +179,12 @@ export function updatePlayerPosition(id, position) {
   if (!newCell) return;
   
   // Remove avatar from old cell
-
-  cell.classList.remove('player', playerClass);
-  delete cell.dataset.playerClass;
-  delete cell.dataset.playerId;
-
+  if (avatarDiv.parentElement) {
+    avatarDiv.parentElement.removeChild(avatarDiv);
+  }
 
   // Add avatar to new cell
-  newCell.classList.add("player", playerClass);
-  newCell.dataset.playerClass = playerClass;
-  newCell.dataset.playerId = playerId;
+  newCell.appendChild(avatarDiv);
 
 }
 

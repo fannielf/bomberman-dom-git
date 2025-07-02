@@ -35,6 +35,7 @@ function addPlayer(client) {
   players.set(client.id, {
     id: client.id,
     nickname: client.nickname,
+    avatar: "player" + (positionIndex + 1), // Assign an avatar based on position
     lives: 3,
     alive: true,
     position: { ...position },
@@ -314,12 +315,12 @@ function isPositionValid({ x, y }) {
     return false;
   }
 
-  // Check for collisions with other players
-  for (const p of players.values()) {
-    if (p.alive && p.position && p.position.x === x && p.position.y === y) {
-      return false;
-    }
-  }
+  // // Check for collisions with other players
+  // for (const p of players.values()) {
+  //   if (p.alive && p.position && p.position.x === x && p.position.y === y) {
+  //     return false;
+  //   }
+  // }
 
   return true;
 }
