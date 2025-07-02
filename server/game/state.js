@@ -1,5 +1,5 @@
 import { chatHistory } from "../handlers/chat.js";
-import { broadcast } from "../handlers/connection.js";
+import { broadcast, clients } from "../handlers/connection.js";
 
 const players = new Map();
 const playerPositions = [];
@@ -378,6 +378,16 @@ function getPlayerPositions() {
   return positions;
 }
 
+function resetGameState() {
+  players.clear();
+  clients.clear();
+  gameState.status = "waiting";
+  gameState.players = {};
+  gameState.bombs = [];
+  gameState.explosions = [];
+  gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
+}
+
 function checkGameEnd() {
   const alivePlayers = Array.from(players.values()).filter(p => p.alive);
   if (alivePlayers.length === 1) {
@@ -387,5 +397,8 @@ function checkGameEnd() {
       type: "gameEnded",
       winner: winner.nickname,
     });
+    chatHistory.length = 0; // Clear chat when game ends
+
+    setTimeout(resetGameState, 2000);
   }
 }

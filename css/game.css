@@ -80,6 +80,18 @@
     animation: explosion-animation 0.5s forwards;
 }
 
+body {
+    background-image: url('../assets/woods.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 #elimination-message {
     position: fixed;
     top: 30%;

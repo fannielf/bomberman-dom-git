@@ -76,6 +76,9 @@ function connect() {
     case 'gameUpdate':
         emit('gameUpdate', {gameState: msg.gameState, players: msg.players, chatHistory: msg.chatHistory });
         break;
+    case 'gameEnded':
+        emit('gameEnded', { winner: msg.winner });
+        break;
     }
         
     })
