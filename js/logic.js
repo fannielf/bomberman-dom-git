@@ -193,3 +193,48 @@ export function updatePlayerPosition(id, position) {
   newCell.dataset.playerId = playerId;
 
 }
+
+// Add this function to render power-ups:
+
+export function renderPowerUps(powerUps, width) {
+  // Clear ALL existing power-ups first
+  document.querySelectorAll('.power-up').forEach(el => el.remove());
+  
+  if (!powerUps) return;
+  
+  powerUps.forEach((powerUp) => {
+    const index = powerUp.y * width + powerUp.x;
+    const cell = document.querySelector(`#game-board .cell:nth-child(${index + 1})`);
+    if (!cell) return;
+
+    const powerUpEl = document.createElement("div");
+    powerUpEl.className = "power-up";
+    powerUpEl.dataset.powerupId = powerUp.id;
+    powerUpEl.title = "+1 Bomb";
+    cell.appendChild(powerUpEl);
+  });
+}
+
+
+export function updateMapTiles(map) {
+  const board = document.getElementById("game-board");
+  if (!board) return;
+  
+  // Update only the tile classes, don't clear the entire board
+  for (let y = 0; y < map.height; y++) {
+    for (let x = 0; x < map.width; x++) {
+      const cell = board.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
+      if (!cell) continue;
+      
+      // Reset tile classes
+      cell.classList.remove("wall", "destructible-wall");
+      
+      // Apply new tile class
+      if (map.tiles[y][x] === "wall") {
+        cell.classList.add("wall");
+      } else if (map.tiles[y][x] === "destructible-wall") {
+        cell.classList.add("destructible-wall");
+      }
+    }
+  }
+}

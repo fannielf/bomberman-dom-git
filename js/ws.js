@@ -79,6 +79,13 @@ function connect() {
     case 'gameEnded':
         emit('gameEnded', { winner: msg.winner });
         break;
+    case 'powerUpPickup':
+        emit('powerUpPickup', { 
+          playerId: msg.playerId, 
+          powerUpId: msg.powerUpId,
+          newPowerUps: msg.newPowerUps 
+        });
+        break;
     }
         
     })
