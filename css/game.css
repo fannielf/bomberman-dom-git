@@ -279,14 +279,19 @@ body {
   animation: pulse 1s infinite;
 }
 
-/* Bomb power-up (existing) */
+/* Bomb power-up*/
 .power-up[data-powerup-type="bomb"] {
   background-image: url("../assets/powerup_bomb.png");
 }
 
-/* Flame power-up (new) */
+/* Flame power-up*/
 .power-up[data-powerup-type="flame"] {
   background-image: url("../assets/powerup_range.png");
+}
+
+/* Speed power-up*/
+.power-up[data-powerup-type="speed"] {
+  background-image: url("../assets/powerup_speed.png");
 }
 
 @keyframes pulse {

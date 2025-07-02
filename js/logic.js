@@ -227,6 +227,8 @@ export function renderPowerUps(powerUps, width) {
       powerUpEl.title = "+1 Bomb";
     } else if (powerUp.type === "flame") {
       powerUpEl.title = "+1 Range";
+    } else if (powerUp.type === "speed") {
+      powerUpEl.title = "+50% Speed";
     }
 
     cell.appendChild(powerUpEl);
