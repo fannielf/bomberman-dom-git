@@ -17,6 +17,7 @@ const gameState = {
   },
   bombs: [],
   explosions: [],
+  powerUpCounts: { bomb: 4, flame: 4 },
   lastUpdate: Date.now(),
 };
 
@@ -90,16 +91,12 @@ function handlePlaceBomb(playerId) {
   const player = players.get(playerId);
   if (!player || !player.alive) return;
 
-  // Check if player has an active bomb already
-  // Calculate total bombs allowed (base + temporary power-ups)
-  const totalBombCount = player.bombCount + 
-    player.tempPowerUps.filter(p => p.type === "bomb").reduce((sum, p) => sum + p.effect, 0);
-  
+  // Use player's current bomb count (no temp power-ups)
   const activeBombs = gameState.bombs.filter(
     (b) => b.ownerId === playerId
   ).length;
   
-  if (activeBombs >= totalBombCount) {
+  if (activeBombs >= player.bombCount) {
     return;
   }
 
@@ -112,12 +109,13 @@ function handlePlaceBomb(playerId) {
     return;
   }
 
+  // Use player's current bomb range (no temp power-ups)
   const bomb = {
     id: crypto.randomUUID(),
     ownerId: playerId,
     position: { ...player.position },
-    timer: 3000, // 3 seconds
-    range: player.bombRange,
+    timer: 3000,
+    range: player.bombRange, // Use direct range
   };
 
   gameState.bombs.push(bomb);
@@ -148,28 +146,42 @@ function explodeBomb(bombId) {
 
   // Calculate explosion in each direction
   for (const dir of directions.slice(1)) {
-    const x = bomb.position.x + dir.x;
-    const y = bomb.position.y + dir.y;
+    for (let i = 1; i <= bomb.range; i++) { // Use bomb.range instead of fixed distance
+      const x = bomb.position.x + (dir.x * i);
+      const y = bomb.position.y + (dir.y * i);
 
-    if (y < 0 || y >= gameState.map.height || x < 0 || x >= gameState.map.width)
-      continue;
+      if (y < 0 || y >= gameState.map.height || x < 0 || x >= gameState.map.width)
+        break;
 
-    const tile = gameState.map.tiles[y][x];
-    if (tile === "wall") continue;
+      const tile = gameState.map.tiles[y][x];
+      if (tile === "wall") break; // Stop at walls
 
-    explosionTiles.add(`${x},${y}`);
+      explosionTiles.add(`${x},${y}`);
 
-    if (tile === "destructible-wall") {
-      gameState.map.tiles[y][x] = "empty";
-
-      // 30% chance to spawn bomb power-up
-      if (Math.random() < 0.3) {
-        gameState.map.powerUps.push({
-          id: crypto.randomUUID(),
-          type: "bomb",
-          x: x,
-          y: y,
-        });
+      if (tile === "destructible-wall") {
+        gameState.map.tiles[y][x] = "empty";
+        
+        // 30% chance to spawn power-up if any remaining
+        if (Math.random() < 0.3) {
+          const availableTypes = [];
+          if (gameState.powerUpCounts.bomb > 0) availableTypes.push("bomb");
+          if (gameState.powerUpCounts.flame > 0) availableTypes.push("flame");
+          
+          if (availableTypes.length > 0) {
+            const powerUpType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+            
+            gameState.map.powerUps.push({
+              id: crypto.randomUUID(),
+              type: powerUpType,
+              x: x,
+              y: y,
+            });
+            
+            // Decrease the count
+            gameState.powerUpCounts[powerUpType]--;
+          }
+        }
+        break; // Stop at destructible walls
       }
     }
   }
@@ -268,23 +280,11 @@ function handlePlayerMove(id, direction) {
       const powerUp = gameState.map.powerUps[powerUpIndex];
 
       if (powerUp.type === "bomb") {
-        // Add temporary power-up effect
-        const tempPowerUp = {
-          id: crypto.randomUUID(),
-          type: "bomb",
-          effect: 1,
-          startTime: Date.now()
-        };
-        
-        player.tempPowerUps.push(tempPowerUp);
-        
-        // Remove power-up after 2 seconds
-        setTimeout(() => {
-          const index = player.tempPowerUps.findIndex(p => p.id === tempPowerUp.id);
-          if (index !== -1) {
-            player.tempPowerUps.splice(index, 1);
-          }
-        }, 2000);
+        // Permanent bomb count increase
+        player.bombCount += 1;
+      } else if (powerUp.type === "flame") {
+        // Permanent range increase
+        player.bombRange += 1;
       }
 
       gameState.map.powerUps.splice(powerUpIndex, 1);
@@ -451,6 +451,7 @@ function resetGameState() {
   gameState.bombs = [];
   gameState.explosions = [];
   gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
+  gameState.powerUpCounts = { bomb: 4, flame: 4 };
 }
 
 function checkGameEnd() {

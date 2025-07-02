@@ -44,141 +44,155 @@ h2 {
 }
 
 #game-board {
-    display: grid;
-    grid-template-columns: repeat(15, 60px);
-    grid-template-rows: repeat(13, 60px);
-    margin: 20px auto;
-    width: fit-content;
+  display: grid;
+  grid-template-columns: repeat(15, 60px);
+  grid-template-rows: repeat(13, 60px);
+  margin: 20px auto;
+  width: fit-content;
 }
 
 .cell {
-    width: 60px;
-    height: 60px;
-    background-color: #d9d9d9;
-    position: relative;
+  width: 60px;
+  height: 60px;
+  background-color: #d9d9d9;
+  position: relative;
 }
 
 .wall {
-    background-image: url('../assets/wall.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    /* position: absolute; */
+  background-image: url("../assets/wall.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  /* position: absolute; */
 }
 
 .destructible-wall {
-    background-image: url('../assets/brick.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    /* position: absolute; */
-    z-index: 5;
+  background-image: url("../assets/brick.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  /* position: absolute; */
+  z-index: 5;
 }
 
 .player {
-    width: 60px;
-    height: 60px;
-    background-size: cover;
-    background-position: center;
-    
-    border: none; /* remove border if not needed */
-    border-radius: 0; /* remove if your image isn't circular */
-    /* position: absolute; */
-    top: 0px;
-    left: 0px;
-    z-index: 10;
+  width: 60px;
+  height: 60px;
+  background-size: cover;
+  background-position: center;
+
+  border: none; /* remove border if not needed */
+  border-radius: 0; /* remove if your image isn't circular */
+  /* position: absolute; */
+  top: 0px;
+  left: 0px;
+  z-index: 10;
 }
 
 .player1 {
-    background-image: url('../assets/player1.png');
+  background-image: url("../assets/player1.png");
 }
 .player2 {
-    background-image: url('../assets/player2.png');
+  background-image: url("../assets/player2.png");
 }
 .player3 {
-    background-image: url('../assets/player3.png');
+  background-image: url("../assets/player3.png");
 }
 .player4 {
-    background-image: url('../assets/player4.png');
+  background-image: url("../assets/player4.png");
 }
 
 .bomb {
-    width: 60px;
-    height: 60px;
-    background-image: url('../assets/bomb.png'); /* your image path here */
-    background-size: cover;
-    background-position: center;
-    position: absolute;
-    top: 1px;
-    left: 1px;
-    z-index: 9;
+  width: 60px;
+  height: 60px;
+  background-image: url("../assets/bomb.png"); /* your image path here */
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  z-index: 9;
 }
 
 .explosion {
-    background-color: rgba(255, 0, 0, 0.5);
-    width: 60px;
-    height: 60px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 20;
-    animation: explosion-animation 0.5s forwards;
+  background-color: rgba(255, 0, 0, 0.5);
+  width: 60px;
+  height: 60px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  animation: explosion-animation 0.5s forwards;
 }
 
 body {
-    background-image: url('../assets/woods.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    height: 100vh;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  background-image: url("../assets/woods.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #elimination-message {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 2px solid #333;
-    padding: 32px;
-    z-index: 1000;
-    font-size: 2em;
-    text-align: center;
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #333;
+  padding: 32px;
+  z-index: 1000;
+  font-size: 2em;
+  text-align: center;
 }
 
 #game-over {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 2px solid #333;
-    padding: 32px;
-    z-index: 1000;
-    font-size: 2em;
-    text-align: center;
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #333;
+  padding: 32px;
+  z-index: 1000;
+  font-size: 2em;
+  text-align: center;
 }
 
 /* Add this to your existing CSS: */
 
 .power-up {
-    width: 60px;
-    height: 60px;
-    background-image: url('../assets/powerup_bomb.png');
-    background-size: cover;
-    background-position: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 5;
-    animation: pulse 1s infinite;
+  width: 60px;
+  height: 60px;
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  animation: pulse 1s infinite;
+}
+
+/* Bomb power-up (existing) */
+.power-up[data-powerup-type="bomb"] {
+  background-image: url("../assets/powerup_bomb.png");
+}
+
+/* Flame power-up (new) */
+.power-up[data-powerup-type="flame"] {
+  background-image: url("../assets/powerup_range.png");
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
