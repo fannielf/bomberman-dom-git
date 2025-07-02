@@ -285,8 +285,23 @@ function renderGameBoard(map, players, bombs, explosions) {
 }
 
 // Handle game start message
-on("gameStarted", ({ map, players }) => {
+on("gameStarted", ({ map, players, chatHistory }) => { // Add chatHistory parameter
   setState({ map, players });
+  
+  // Display lobby chat history in game chat
+  if (chatHistory && chatHistory.length > 0) {
+    setTimeout(() => { // Small delay to ensure DOM is rendered
+      const chatContainer = document.getElementById('chat');
+      if (chatContainer) {
+        chatHistory.forEach(entry => {
+          const div = document.createElement('div');
+          div.textContent = `${entry.nickname}: ${entry.message}`;
+          chatContainer.appendChild(div);
+        });
+      }
+    }, 10);
+  }
+  
   startGame();
 });
 

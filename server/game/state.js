@@ -51,6 +51,10 @@ function addPlayer(client) {
 function removePlayer(id) {
   players.delete(id);
   checkGameEnd();
+  if (players.size === 0) {
+    resetGameState();
+    broadcast({ type: "gameReset" });
+  }
 }
 
 export function deActivePlayer(id) {
@@ -387,10 +391,8 @@ function checkGameEnd() {
       type: "gameEnded",
       winner: winner.nickname,
     });
-    setTimeout(() => {
-      resetGameState();
-      broadcast({ type: "gameReset" });
-    }, 2000);
+    
+    chatHistory.length = 0; // Clear chat when game ends
   }
 }
 
