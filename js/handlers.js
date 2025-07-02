@@ -86,7 +86,14 @@ on("bombPlaced", ({ bomb }) => {
 });
 
 // Handle explosion
-on("explosion", ({ explosion }) => {
+on("explosion", ({ bombId, explosion, updatedMap, players }) => {
+  const bombEl = document.querySelector(`.bomb-${bombId}`);
+  if (bombEl) {
+    bombEl.remove();
+  }
+
+  renderStaticBoard(updatedMap);
+  renderPlayers(players, updatedMap.width);
   showExplosion(explosion);
 });
 

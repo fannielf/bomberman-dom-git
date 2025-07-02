@@ -187,6 +187,7 @@ function explodeBomb(bombId) {
     bombId: bomb.id,
     explosion,
     updatedMap: gameState.map,
+    players: Array.from(players.values()),
   });
 
   // // Remove the explosion visual after a short time
