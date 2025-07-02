@@ -15,6 +15,20 @@ return {
   attrs: {},
   children: [
     {
+      tag: 'h1',
+      attrs: {
+        id: 'title'
+      },
+      children: ['Twilight Inferno']
+    },
+    {
+      tag: 'p',
+      attrs: {
+        id: 'info-text'
+      },
+      children: ['Twilight falls, the arena ignites… enter your name to join the fight.']
+    },
+    {
       tag: 'input',
       attrs: {
         id: 'nickname-input',

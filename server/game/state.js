@@ -1,5 +1,5 @@
 import { chatHistory } from "../handlers/chat.js";
-import { broadcast, clients } from "../handlers/connection.js";
+import { broadcast, clients, sendMsg } from "../handlers/connection.js";
 
 const players = new Map();
 const playerPositions = [];
@@ -384,15 +384,20 @@ function startCountdown() {
   }, 10);
 }
 
-export function startGame() {
+export function startGame(ws = null) {
   gameState.status = "running";
-  // Send the map to clients
-  broadcast({
+  const message = {
     type: "gameStarted",
     map: gameState.map,
     players: Array.from(players.values()),
     chatHistory,
-  });
+  }
+
+  if (ws) {
+    sendMsg(ws, message);
+  } else {
+    broadcast(message);
+  }
 }
 
 // Add the generateGameMap function here too

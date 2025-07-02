@@ -1,7 +1,14 @@
 import { sendMessage } from "./ws.js";
-import { on } from "../framework/index.js";
 
 export function Chat({ playerID, nickname }) {
+  const sendChatMessage = () => {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if (message) {
+      sendMessage({ type: 'chat', id: playerID, nickname, message });
+      input.value = '';
+    }
+  };
 
   return {
     tag: 'div',
@@ -18,7 +25,12 @@ export function Chat({ playerID, nickname }) {
           id: 'chat-input',
           autofocus: true,
           type: 'text',
-          placeholder: 'Type your message here...'
+          placeholder: 'Type your message here...',
+          onkeydown: (e) => {
+            if (e.key === 'Enter') {
+              sendChatMessage();
+            }
+          }
         },
         children: []
       },
@@ -26,27 +38,11 @@ export function Chat({ playerID, nickname }) {
         tag: 'button',
         attrs: {
           id: 'send-chat',
-          onclick: () => {
-            const message = document.getElementById('chat-input').value.trim();
-            if (message) {
-              sendMessage({ type: 'chat', id: playerID, nickname, message });
-              document.getElementById('chat-input').value = '';
-            }
-          }
+          onclick: sendChatMessage
         },
         children: ['Send']
       }
     ]
   };
 }
-
-
-// Chat state and handler (can be imported in both lobby and game)
-on('newChat', ({ nickname, message }) => {
-  const chatContainer = document.getElementById('chat');
-  if (chatContainer) {
-    chatContainer.innerHTML += `<div>${nickname}: ${message}</div>`;
-    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
-  }
-});
 

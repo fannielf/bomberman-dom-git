@@ -8,6 +8,11 @@ const MOVE_INTERVAL = 100; // move every 100ms
 export let gameEnded = false;
 
 function handleKeyDown(e) {
+  // If the user is typing in the chat input, do not handle game controls.
+  if (document.activeElement.id === 'chat-input') {
+    return;
+  }
+
   console.log("Key pressed:", e.key);
   // Prevent default browser actions for arrow keys
   if (

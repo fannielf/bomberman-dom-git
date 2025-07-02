@@ -1,5 +1,4 @@
 import { sendMessage } from "./ws.js";
-import { setState } from "../framework/index.js"
 import { Chat } from "./chat.js";
 
 const user = JSON.parse(localStorage.getItem('user'));
@@ -55,8 +54,22 @@ export function Lobby() {
       },
       {
         tag: 'div',
-        attrs: {},
+        attrs: { id: 'chat-area', class: 'collapsed' },
         children: [
+          {
+            tag: 'div',
+            attrs: {
+              id: 'chat-toggle',
+              onclick: () => {
+                const chatArea = document.getElementById('chat-area');
+                chatArea.classList.toggle('collapsed');
+                if (!chatArea.classList.contains('collapsed')) {
+                  document.getElementById('chat-input').focus();
+                }
+              }
+            },
+            children: ['💬']
+          },
           Chat({ playerID, nickname }) // Include Chat component
         ]
       },

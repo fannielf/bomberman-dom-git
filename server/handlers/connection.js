@@ -19,8 +19,8 @@ export function updateConnection(id, conn) {
 }
 
 
-export function sendMsg(ws, type, message = {}) {
+export function sendMsg(ws, data) {
     if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type, ...message }));
+        ws.send(JSON.stringify(data));
     }
 }
