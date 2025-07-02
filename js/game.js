@@ -1,107 +1,31 @@
-import { sendMessage } from "./ws.js";
 import { Chat } from "./chat.js";
-import { setState, getState, on } from "../framework/index.js";
+import { setState } from "../framework/index.js";
+import { sendMessage } from "./ws.js";
+import { stopGame } from "./logic.js";
 
-window.setState = setState; //for testing purposes, remove later
-window.getState = getState; //for testing purposes, remove later
-
-setState({
-  gameInfo: "",
-  map: null,
-  players: [],
-  bombs: [],
-  explosions: [],
-  gameEnded: false,
-});
-
-// game loop and input handling logic
-let gameLoopActive = false;
-const keysPressed = new Set();
-let lastMoveTime = 0;
-const MOVE_INTERVAL = 100; // move every 100ms
-
-function handleKeyDown(e) {
-  console.log("Key pressed:", e.key);
-  // Prevent default browser actions for arrow keys
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
-    e.preventDefault();
-  }
-  if (e.key === " ") {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
-      sendMessage({ type: "placeBomb", id: user.id });
-    }
-    return; // Don't add space to keysPressed
-  }
-  keysPressed.add(e.key.toLowerCase());
-}
-
-function handleKeyUp(e) {
-  keysPressed.delete(e.key.toLowerCase());
-}
-
-function gameLoop(timestamp) {
-  if (!gameLoopActive) return;
-
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) {
-    stopGame();
-    return;
-  }
-
-  // Throttle movement requests to avoid sending too many
-  if (timestamp - lastMoveTime > MOVE_INTERVAL) {
-    let direction = null;
-    if (keysPressed.has("arrowup") || keysPressed.has("w")) {
-      direction = "up";
-    } else if (keysPressed.has("arrowdown") || keysPressed.has("s")) {
-      direction = "down";
-    } else if (keysPressed.has("arrowleft") || keysPressed.has("a")) {
-      direction = "left";
-    } else if (keysPressed.has("arrowright") || keysPressed.has("d")) {
-      direction = "right";
-    }
-
-    if (direction) {
-      sendMessage({ type: "move", id: user.id, direction });
-      lastMoveTime = timestamp;
-    }
-  }
-
-  requestAnimationFrame(gameLoop);
-}
-
-function startGame() {
-  if (gameLoopActive) return;
-  gameLoopActive = true;
-  window.addEventListener("keydown", handleKeyDown);
-  window.addEventListener("keyup", handleKeyUp);
-  requestAnimationFrame(gameLoop);
-}
-
-function stopGame() {
-  gameLoopActive = false;
-  window.removeEventListener("keydown", handleKeyDown);
-  window.removeEventListener("keyup", handleKeyUp);
-  keysPressed.clear();
-}
+let gameStarted = false;
 
 export function Game() {
-  console.log("players in game:", getState().players);
+
+  console.log("Game component loaded");
+
   const user = JSON.parse(localStorage.getItem("user"));
+  console.log("User in Game component:", user);
 
   if (!user) {
-    window.location.hash = "/";
-    return;
+    console.log("No user found");
+    // window.location.hash = "/";
+    // setState({ page: "/" });
+    // return;
   }
 
-  const nickname = user.nickname;
-  const playerID = user.id;
-  const { gameInfo, map, players, bombs, explosions, gameEnded } = getState();
-  const me = (players || []).find(p => p.id === playerID);
+  if (!gameStarted && user.id) {
+    gameStarted = true;
+  }
 
   return {
     tag: "div",
+    attrs: { id: "game-container" },
     children: [
       {
         tag: "h2",
@@ -110,260 +34,37 @@ export function Game() {
       {
         tag: "div",
         attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
-        children: (players || []).map(p => ({
-          tag: "span",
-          attrs: {
-            key: p.id, // ensure each player has a unique key
-            style: `margin-right: 16px; color: ${p.alive ? "black" : "gray"}; font-weight: bold;`
-          },
-          children: [
-            `${p.nickname}: ${p.lives ?? 0} ❤️`
-          ]
-        }))
+        children: []
       },
-
       {
         tag: "div",
         attrs: { id: "game-board" },
-        children: map ? renderGameBoard(map, players, bombs, explosions) : [],
+        children:[],
       },
       {
         tag: "p",
         attrs: { id: "game-info" },
-        children: [gameInfo || `Good luck, ${nickname}!`],
-      },
-      !gameEnded && me && me.lives === 0 && {
-        tag: "div",
-        attrs: {
-          style: `
-            position: fixed;
-            top: 30%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 2px solid #333;
-            padding: 32px;
-            z-index: 1000;
-            font-size: 2em;
-            text-align: center;
-          `
-        },
-        children: [
-          "You are out of lives! You can still watch and chat."
-        ]
-      },
-      gameEnded && {
-        tag: "div",
-        attrs: {
-          style: `
-            position: fixed;
-            top: 30%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 2px solid #333;
-            padding: 32px;
-            z-index: 1000;
-            font-size: 2em;
-            text-align: center;
-          `
-        },
-        children: [
-          gameInfo,
-          { tag: "br" },
-          { tag: "button", attrs: { onclick: () => window.location.hash = "/" }, children: ["Back to Menu"] }
-        ]
+        children: [],
       },
       {
         tag: "button",
         attrs: {
           onclick: () => {
-            sendMessage({ type: "leaveGame", id: playerID });
+            sendMessage({ type: "leaveGame", id: user.id });
             localStorage.removeItem("user");
             stopGame(); // Stop the loop and remove listeners
             window.location.hash = "/";
-          },
         },
         children: ["Leave Game"],
+        },
       },
       {
         tag: 'div',
         attrs: {},
         children: [
-          Chat({ playerID, nickname }) // Include Chat component
-          //Chat({ playerID: user.id, nickname: user.nickname })
+          Chat({ user: { playerID: user.id, nickname: user.nickname } }) // Include Chat component
         ]
       },
-    ].filter(Boolean), // Filter out any null values
+    ]
   };
 }
-
-function renderGameBoard(map, players, bombs, explosions) {
-  const cells = [];
-  const rowLength = map.height || 13; // Default height
-  const colLength = map.width || 15; // Default width
-
-  for (let row = 0; row < rowLength; row++) {
-    for (let col = 0; col < colLength; col++) {
-      let cellClass = "cell";
-      const cellType = map.tiles[row][col];
-      
-      if (cellType === "wall") {
-        cellClass += " wall";
-      } else if (cellType === "destructible-wall") {
-        cellClass += " destructible-wall";
-      }
-
-      cells.push({
-        tag: "div",
-        attrs: {
-          className: cellClass,
-          "data-row": row,
-          "data-col": col,
-        },
-        children: [],
-      });
-    }
-  }
-
-  if (players) {
-    players.forEach((player, index) => {
-      if (player.alive && player.position) {
-        const { x, y } = player.position;
-        const playerIndex = y * colLength + x;
-        if (cells[playerIndex]) {
-          cells[playerIndex].children.push({
-            tag: 'div',
-            attrs: {
-              className: 'player',
-              style: `background-image: url('../assets/player${index + 1}.png');`,
-            },
-            children: []
-          });
-        }
-      }
-    });
-  }
-
-  // Render bombs
-  if (bombs) {
-    bombs.forEach((bomb) => {
-      const { x, y } = bomb.position;
-      const bombIndex = y * colLength + x;
-      if (cells[bombIndex]) {
-        cells[bombIndex].children.push({
-          tag: "div",
-          attrs: { className: "bomb" },
-          children: [],
-        });
-      }
-    });
-  }
-
-  // Render explosions
-  if (explosions) {
-    explosions.forEach((explosion) => {
-      explosion.tiles.forEach((tile) => {
-        const { x, y } = tile;
-        const explosionIndex = y * colLength + x;
-        if (cells[explosionIndex]) {
-          cells[explosionIndex].children.push({
-            tag: "div",
-            attrs: { className: "explosion" },
-            children: [],
-          });
-        }
-      });
-    });
-  }
-
-  return cells;
-}
-
-// Handle game start message
-on("gameStarted", ({ map, players }) => {
-  setState({ map, players });
-  startGame();
-});
-
-// Handle player movement updates from the server
-on("playerMoved", ({ id, position }) => {
-  const { players } = getState();
-  // Find the player and update their position.
-  // Create a new array to trigger re-render.
-  const newPlayers = players.map((p) => {
-    if (p.id === id) {
-      return { ...p, position };
-    }
-    return p;
-  });
-  setState({ players: newPlayers });
-});
-
-// Handle bomb placement
-on("bombPlaced", ({ bomb }) => {
-  const { bombs } = getState();
-  setState({ bombs: [...bombs, bomb] });
-});
-
-// Handle explosion
-on("explosion", ({ bombId, explosion, updatedMap }) => {
-  const { bombs, explosions } = getState();
-  // Remove the exploded bomb by its ID
-  const newBombs = bombs.filter((b) => b.id !== bombId);
-  // Add the new explosion
-  const newExplosions = [...explosions, explosion];
-  setState({ bombs: newBombs, explosions: newExplosions, map: updatedMap });
-});
-
-// Handle explosion end
-on("explosionEnded", ({ explosionId }) => {
-  const { explosions } = getState();
-  const newExplosions = explosions.filter((e) => e.id !== explosionId);
-  setState({ explosions: newExplosions });
-});
-
-// Handle player updates (e.g., losing a life)
-on("playerUpdate", ({ player }) => {
-  if (player.lives <= 0 || player.alive === false) {
-    return;
-  }
-  console.log("playerUpdate", player);
-  const { players } = getState();
-  const newPlayers = players.map((p) => {
-    if (p.id === player.id && p.alive !== false) {
-      return { ...p, ...player }; // Merge updates
-    }
-    return p;
-  });
-  setState({ players: newPlayers });
-});
-
-// Handle player elimination when they lose all lives
-on("playerEliminated", ({ id, nickname }) => {
-  console.log("🔥 playerEliminated EVENT TRIGGERED");
-  const { players } = getState();
-  console.log("players before elimination:", players);
-  const newPlayers = players.map((p) => {
-    if (p.id === id) {
-      return {
-        ...p,
-        lives: 0,
-        alive: false,
-        position: null,
-      };
-    }
-    return p;
-});
-  console.log("players after elimination:", newPlayers);
-  setState({ players: newPlayers });
-});
-
-// Handle game end
-on("gameEnded", ({ winner }) => {
-  setState({ gameInfo: `Game Over! Winner: ${winner}`, gameEnded: true });
-});
-
-
-
-

@@ -16,6 +16,8 @@ export function Chat({ playerID, nickname }) {
         tag: 'input',
         attrs: {
           id: 'chat-input',
+          autofocus: true,
+          type: 'text',
           placeholder: 'Type your message here...'
         },
         children: []

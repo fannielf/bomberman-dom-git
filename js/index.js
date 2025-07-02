@@ -9,7 +9,3 @@ initRouter('app'); // sets up router and assigns root DOM node
 addRoute('/', Main);
 addRoute('/lobby', Lobby);
 addRoute('/game', Game);
-
-setState({
-  page: '/',
-});
