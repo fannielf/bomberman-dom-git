@@ -1,6 +1,6 @@
 import { on, render, setState, getState } from '../framework/index.js';
 import { sendMessage } from './ws.js';
-import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers } from './logic.js';
+import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, renderPowerUps, updateMapTiles } from './logic.js';
 
 console.log('Handlers loaded');
 let width;
@@ -83,6 +83,7 @@ on("gameStarted", ({ map, players, chatHistory }) => {
   width = map.width; // Store the width for rendering players
   renderStaticBoard(map);
   renderPlayers(players, map.width);
+  renderPowerUps(map.powerUps, map.width); // Add this line
   startGame();
 
   const chatContainer = document.getElementById('chat');
@@ -105,13 +106,16 @@ on("bombPlaced", ({ bomb }) => {
 
 // Handle explosion
 on("explosion", ({ bombId, explosion, updatedMap, players }) => {
+  // Only remove the specific bomb that exploded
   const bombEl = document.querySelector(`.bomb-${bombId}`);
   if (bombEl) {
     bombEl.remove();
   }
 
-  renderStaticBoard(updatedMap);
+  // Update only the map tiles, don't re-render the entire board
+  updateMapTiles(updatedMap);
   renderPlayers(players, updatedMap.width);
+  renderPowerUps(updatedMap.powerUps, updatedMap.width);
   showExplosion(explosion);
 });
 
@@ -163,4 +167,13 @@ on ("gameUpdate", ({ gameState, players, chatHistory }) => {
 
 on("sendMessage", ({ msg }) => {
   sendMessage(msg);
+});
+
+// Handle power-up pickup
+on("powerUpPickup", ({ playerId, powerUpId, newPowerUps }) => {
+  // Remove power-up from DOM
+  const powerUpEl = document.querySelector(`[data-powerup-id="${powerUpId}"]`);
+  if (powerUpEl) {
+    powerUpEl.remove();
+  }
 });
