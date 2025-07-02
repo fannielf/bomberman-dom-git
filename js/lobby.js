@@ -15,7 +15,6 @@ if (!user) {
 export function Lobby() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) {
-    // setState({ page: '/' });
     window.location.hash = '/';
     return;
   }
@@ -24,61 +23,106 @@ export function Lobby() {
 
   return {
     tag: 'div',
-    attrs: {},
+    attrs: { id: 'lobby-page' },
     children: [
       {
-        tag: 'h2',
-        attrs: {},
-        children: ['Lobby']
-      },
-      {
-        tag: 'p',
-        attrs: { id: 'welcome' },
-        children: [`Welcome, ${nickname}!`]
-      },
-      {
-        tag: 'p',
-        attrs: { id: 'player-count' },
-        children: []
-      },
-      // Add countdown display
-      {
-        tag: 'p',
-        attrs: { id: 'timer', style: 'font-size: 20px; font-weight: bold; color: red;' },
-        children: []
-      },
-      {
-        tag: 'ul',
-        attrs: { id: 'player-list' },
-        children: []
-      },
-      {
         tag: 'div',
-        attrs: { id: 'chat-area', class: 'collapsed' },
+        attrs: { class: 'lobby-container' },
         children: [
           {
-            tag: 'div',
-            attrs: {
-              id: 'chat-toggle',
-              onclick: () => {
-                const chatArea = document.getElementById('chat-area');
-                chatArea.classList.toggle('collapsed');
-                if (!chatArea.classList.contains('collapsed')) {
-                  document.getElementById('chat-input').focus();
-                }
-              }
-            },
-            children: ['💬']
+            tag: 'h1',
+            attrs: {},
+            children: ['Lobby']
           },
-          Chat({ playerID, nickname }) // Include Chat component
+          {
+            tag: 'p',
+            attrs: { id: 'welcome' },
+            children: [`Welcome, ${nickname}!`]
+          },
+          {
+            tag: 'p',
+            attrs: { id: 'player-count' },
+            children: []
+          },
+          {
+            tag: 'ul',
+            attrs: { id: 'player-list' },
+            children: []
+          },
+          {
+            tag: 'div',
+            attrs: { id: 'chat-area', class: 'collapsed' },
+            children: [
+              {
+                tag: 'div',
+                attrs: {
+                  id: 'chat-toggle',
+                  onclick: () => {
+                    const chatArea = document.getElementById('chat-area');
+                    chatArea.classList.toggle('collapsed');
+                    if (!chatArea.classList.contains('collapsed')) {
+                      document.getElementById('chat-input').focus();
+                    }
+                  }
+                },
+                children: ['💬']
+              },
+              Chat({ playerID, nickname })
+            ]
+          },
+          {
+            tag: 'p',
+            attrs: { id: 'error', style: 'color:red' },
+            children: []
+          }
         ]
       },
       {
-        tag: 'p',
-        attrs: { id: 'error', style: 'color:red' },
-        children: []
+        tag: 'div',
+        attrs: { class: 'info-section' },
+        children: [
+          {
+            tag: 'h2',
+            children: ['How to Play']
+          },
+          {
+            tag: 'p',
+            children: [
+              'Forks trembles beneath the weight of ancient grudges and very unstable explosives.'
+            ]
+          },
+          {
+            tag: 'ul',
+            children: [
+              { tag: 'li', children: ['Use arrow keys or WASD to move.'] },
+              { tag: 'li', children: ['Press space to place a bomb.'] },
+              { tag: 'li', children: ['Collect power-ups to gain an advantage.'] },
+              { tag: 'li', children: ['Be the last player standing to win!'] }
+            ]
+          },
+          {
+            tag: 'p',
+            children: [
+              'Power-ups include:'
+            ]
+          },
+          {
+            tag: 'ul',
+            children: [
+              { tag: 'li', children: ['Bomb, enables you to place more'] },
+              { tag: 'li', children: ['Fuel, increases the blast radius'] },
+              { tag: 'li', children: ['Speed, increses the walking speed'] }
+            ]
+          },
+          {
+            tag: 'p',
+            children: [
+              'Will you be the last immortal standing?'
+            ]
+          }
+        ]
       }
     ]
   };
-  }
+}
 
