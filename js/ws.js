@@ -65,7 +65,7 @@ function connect() {
         emit('bombPlaced', { bomb: msg.bomb });
         break;
     case 'explosion':
-        emit('explosion', { bombId: msg.bombId, explosion: msg.explosion, updatedMap: msg.updatedMap });
+        emit('explosion', { bombId: msg.bombId, explosion: msg.explosion, updatedMap: msg.updatedMap, players: msg.players });
         break;
     case 'playerUpdate':
         emit('playerUpdate', { player: msg.player });
@@ -78,6 +78,13 @@ function connect() {
         break;
     case 'gameEnded':
         emit('gameEnded', { winner: msg.winner });
+        break;
+    case 'powerUpPickup':
+        emit('powerUpPickup', { 
+          playerId: msg.playerId, 
+          powerUpId: msg.powerUpId,
+          newPowerUps: msg.newPowerUps 
+        });
         break;
     }
         
