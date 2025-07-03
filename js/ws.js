@@ -19,8 +19,11 @@ function connect() {
     case 'reset' :
         emit('reset');
         break;
-    case 'readyTimer': // Add this case
+    case 'readyTimer':
         emit('readyTimer', { countdown: msg.countdown });
+        break;
+    case 'waitingTimer':
+        emit('waitingTimer', { timeLeft: msg.timeLeft });
         break;
     case 'gameState':
         window.location.hash = '/game'; // Redirect to game page

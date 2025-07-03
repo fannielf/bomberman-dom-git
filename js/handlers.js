@@ -70,11 +70,19 @@ on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
 
 });
 
-// Add countdown handler
+// countdown handler
 on('readyTimer', ({ countdown }) => {
   const timerContainer = document.getElementById('timer');
   if (timerContainer) {
     timerContainer.textContent = `Game starting in: ${countdown} s`;
+  }
+});
+
+// waiting timer handler
+on('waitingTimer', ({ timeLeft }) => {
+  const timerContainer = document.getElementById('timer');
+  if (timerContainer) {
+    timerContainer.textContent = `Waiting for more players... Starting in: ${timeLeft} s`;
   }
 });
 
