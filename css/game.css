@@ -82,8 +82,7 @@
 .info-section {
     margin: 20px;
     padding: 20px;
-    /* break into rows if overflow */
-    max-width: 700px;;
+    max-width: 700px;
     background-color: rgba(0, 0, 0, 0.442);
     border-radius: 10px;
     color: #fff;
@@ -100,6 +99,7 @@ h2 {
   grid-template-rows: repeat(13, 60px);
   margin: 20px auto;
   width: fit-content;
+  position: relative;
 }
 
 .cell {
@@ -129,12 +129,15 @@ h2 {
     height: 60px;
     background-size: cover;
     background-position: center;
-    transition: transform 0.2s ease-out;
+    transition: transform 0.1s linear; 
     border: none;
     border-radius: 0;
+    position: absolute; 
     top: 0px;
     left: 0px;
     z-index: 10;
+    /* Will change to transform for smoother animations */
+    will-change: transform; 
 }
 
 .player1 {
@@ -153,7 +156,7 @@ h2 {
 .bomb {
   width: 60px;
   height: 60px;
-  background-image: url("../assets/bomb.png"); /* your image path here */
+  background-image: url("../assets/bomb.png");
   background-size: cover;
   background-position: center;
   position: absolute;
@@ -228,7 +231,7 @@ body {
 }
 
 #chat-area.collapsed {
-    transform: translateY(calc(100% - 40px)); /* Show only the toggle (40px height) */
+    transform: translateY(calc(100% - 40px));
 }
 
 #chat-toggle {

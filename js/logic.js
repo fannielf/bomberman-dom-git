@@ -1,5 +1,9 @@
 import { sendMessage } from "./ws.js";
 
+// Client-side state for smooth rendering
+const clientPlayers = new Map();
+const TILE_SIZE = 60; // The size of one tile in pixels
+
 // game loop and input handling logic
 let gameLoopActive = false;
 const keysPressed = new Set();
@@ -32,6 +36,38 @@ function handleKeyDown(e) {
 
 function handleKeyUp(e) {
   keysPressed.delete(e.key.toLowerCase());
+}
+
+// NEW: Rendering loop for smooth movement
+function clientRenderLoop() {
+  if (!gameLoopActive) return;
+
+  const board = document.getElementById("game-board");
+  if (!board) return;
+
+  for (const [id, player] of clientPlayers.entries()) {
+    if (!player.element) continue;
+
+    // Interpolate position
+    const now = Date.now();
+    const timeSinceUpdate = now - player.lastUpdateTime;
+    
+    // Use player-specific speed for move duration. Must match server's baseCooldown.
+    const baseCooldown = 200; 
+    const moveDuration = baseCooldown / (player.speed || 1);
+
+    // Clamp progress between 0 and 1
+    const progress = Math.min(timeSinceUpdate / moveDuration, 1);
+
+    // Linear interpolation (lerp)
+    const visualX = player.lastPos.x + (player.targetPos.x - player.lastPos.x) * progress;
+    const visualY = player.lastPos.y + (player.targetPos.y - player.lastPos.y) * progress;
+
+    // Update CSS transform
+    player.element.style.transform = `translate(${visualX * TILE_SIZE}px, ${visualY * TILE_SIZE}px)`;
+  }
+
+  requestAnimationFrame(clientRenderLoop);
 }
 
 function gameLoop(timestamp) {
@@ -71,6 +107,7 @@ export function startGame() {
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
   requestAnimationFrame(gameLoop);
+  requestAnimationFrame(clientRenderLoop); // Start the rendering loop
 }
 
 export function stopGame() {
@@ -78,6 +115,7 @@ export function stopGame() {
   window.removeEventListener("keydown", handleKeyDown);
   window.removeEventListener("keyup", handleKeyUp);
   keysPressed.clear();
+  clientPlayers.clear(); // Clear client-side player state
 }
 
 export function renderStaticBoard(map) {
@@ -98,20 +136,32 @@ export function renderStaticBoard(map) {
 }
 
 export function renderPlayers(players, width) {
-  document.querySelectorAll(".player").forEach(div => { div.remove(); });
+  // This function now only creates the player elements once
+  const board = document.getElementById("game-board");
+  if (!board) return;
 
   players.forEach((p, i) => {
     if (!p.position || !p.alive) return;
-    const index = p.position.y * width + p.position.x;
-    const cell = document.querySelector(
-      `#game-board .cell:nth-child(${index + 1})`
-    );
-    if (!cell) return;
 
-    const avatarDiv = document.createElement("div");
-    avatarDiv.classList.add("player", p.avatar);
-    avatarDiv.dataset.playerId = p.id;
-    cell.appendChild(avatarDiv);
+    // Create element if it doesn't exist
+    if (!clientPlayers.has(p.id)) {
+      const avatarDiv = document.createElement("div");
+      avatarDiv.classList.add("player", p.avatar);
+      avatarDiv.dataset.playerId = p.id;
+      board.appendChild(avatarDiv);
+
+      // Initialize client-side state for this player
+      clientPlayers.set(p.id, {
+        element: avatarDiv,
+        lastPos: { ...p.position },
+        targetPos: { ...p.position },
+        lastUpdateTime: Date.now(),
+        speed: p.speed, // Store initial speed
+      });
+
+      // Set initial position
+      avatarDiv.style.transform = `translate(${p.position.x * TILE_SIZE}px, ${p.position.y * TILE_SIZE}px)`;
+    }
   });
 }
 
@@ -158,15 +208,27 @@ export function placeBomb(bomb) {
 }
 
 export function updatePlayer(player) {
-  const { id, position, alive } = player;
+  const { id, alive } = player;
 
   const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
 
-  if (!avatar || !position) return;
+  if (!avatar) return;
 
-  // avatar.classList.toggle("alive", alive);  // do we need this?
-  avatar.classList.toggle("dead", !alive);
+  // Update client-side state if it exists
+  if (clientPlayers.has(id)) {
+    const playerState = clientPlayers.get(id);
+    // Update any provided stats
+    if (player.speed !== undefined) {
+      playerState.speed = player.speed;
+    }
+  }
+
+  avatar.classList.toggle("dead", alive === false);
   
+  if (alive === false) {
+    avatar.remove();
+    clientPlayers.delete(id);
+  }
 }
 
 export function leaveGame(id) {
@@ -178,25 +240,19 @@ export function leaveGame(id) {
 }
 
 export function updatePlayerPosition(id, position) {
-  const board = document.getElementById("game-board");
-  if (!board) return;
-
-  const avatarDiv = document.querySelector(`.player[data-player-id="${id}"]`);
-  if (!avatarDiv) return;
-  
-  const newCell = board.querySelector(
-    `.cell[data-row="${position.y}"][data-col="${position.x}"]`
-  );
-  if (!newCell) return;
-
-  // Remove avatar from old cell
-  if (avatarDiv.parentElement) {
-    avatarDiv.parentElement.removeChild(avatarDiv);
+  // This function now updates the target for interpolation
+  if (clientPlayers.has(id)) {
+    const playerState = clientPlayers.get(id);
+    
+    // The old target becomes the new starting point for interpolation.
+    playerState.lastPos = { ...playerState.targetPos };
+    
+    // The new position from the server is the new target.
+    playerState.targetPos = { ...position };
+    
+    // Reset the timer for the new interpolation segment.
+    playerState.lastUpdateTime = Date.now();
   }
-
-  // Add avatar to new cell
-  newCell.appendChild(avatarDiv);
-
 }
 
 // Add this function to render power-ups:

@@ -314,6 +314,18 @@ function handlePlayerMove(id, direction) {
         powerUpId: powerUp.id,
         newPowerUps: gameState.map.powerUps,
       });
+
+      // Also broadcast the player stats update
+      broadcast({
+        type: "playerUpdate",
+        player: { 
+            id: player.id, 
+            alive: player.alive,
+            speed: player.speed, 
+            bombCount: player.bombCount, 
+            bombRange: player.bombRange 
+        },
+      });
     }
 
     broadcast({ type: "playerMoved", id, position: newPosition, oldPosition });
