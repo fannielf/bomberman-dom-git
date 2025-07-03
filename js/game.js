@@ -54,13 +54,14 @@ export function Game() {
           {
             tag: "button",
             attrs: {
+              id: "leave-game-button", // Add an ID for styling
               onclick: () => {
                 sendMessage({ type: "leaveGame", id: user.id });
                 stopGame(); // Stop the loop and remove listeners
                 emit('reset');
+              },
             },
             children: ["Leave Game"],
-            },
           },
         ]
       },

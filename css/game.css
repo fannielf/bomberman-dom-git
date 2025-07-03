@@ -350,6 +350,21 @@ body {
   background-image: url("../assets/powerup_speed.png");
 }
 
+button {
+  font-size: 1em;
+  padding: 10px 20px;
+  background-color: #4f6754;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #5c805c;
+  transition: background-color 0.3s ease;
+}
+
 @keyframes pulse {
   0%,
   100% {
