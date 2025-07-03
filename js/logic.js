@@ -16,7 +16,7 @@ export let gameStarted = false
 
 function handleKeyDown(e) {
   // If the user is typing in the chat input, do not handle game controls.
-  if (document.activeElement.id === 'chat-input') {
+  if (document.activeElement.id === 'chat-input' || gameEnded ) {
     return;
   }
 
