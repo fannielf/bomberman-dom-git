@@ -1,5 +1,4 @@
 import { Chat } from "./chat.js";
-import { setState } from "../framework/index.js";
 import { sendMessage } from "./ws.js";
 import { stopGame } from "./logic.js";
 import { currentPlayers } from "./handlers.js";
@@ -26,58 +25,67 @@ export function Game() {
     gameStarted = true;
   }
 
+  document.getElementById('background-video').style.display = 'none';
+
   return {
     tag: "div",
-    attrs: { id: "game-container" },
+    attrs: { id: "game-page-container" },
     children: [
       {
-        tag: "h2",
-        children: ["Twilight Inferno"],
-      },
-      {
         tag: "div",
-        attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
-        children: (currentPlayers.length > 0)
-          ? currentPlayers.map(p => ({
-              tag: "span",
-              attrs: {
-                class: "player-lives-label",
-                style: "margin-right: 16px;",
-              },
-              children: [`${p.nickname}: ${p.lives}`],
-            }))
-          : [{ tag: "span", children: ["Waiting for players..."] }],
-      },
-      {
-        tag: "div",
-        attrs: { id: "game-board" },
-        children:[],
-      },
-      {
-        tag: "p",
-        attrs: { id: "game-info" },
-        children: [],
-      },
-      {
-        tag: "button",
-        attrs: {
+        attrs: { id: "game-container" },
+        children: [
+          {
+            tag: "h2",
+            children: ["Twilight Inferno"],
+          },
+          {
+            tag: "div",
+            attrs: { id: "player-lives" },
+            children: [],
+          },
+          {
+            tag: "div",
+            attrs: { id: "game-board" },
+            children:[],
+          },
+          {
+            tag: "p",
+            attrs: { id: "game-info" },
+            children: [],
+          },
+          {
+            tag: "button",
+            attrs: {
           class: "leave-game-button",
-          onclick: () => {
-            sendMessage({ type: "leaveGame", id: user.id });
-            localStorage.removeItem("user");
-            stopGame(); // Stop the loop and remove listeners
-            window.location.hash = "/";
+              onclick: () => {
+                sendMessage({ type: "leaveGame", id: user.id });
+                localStorage.removeItem("user");
+                stopGame(); // Stop the loop and remove listeners
+                window.location.hash = "/";
         },
-      },
-      children: ["Leave Game"],
+          },
+          children: ["Leave Game"],
+              },
+        ]
       },
       {
         tag: 'div',
-        attrs: {},
+        attrs: { id: 'chat-area', class: 'collapsed' },
         children: [
-          Chat({ user: { playerID: user.id, nickname: user.nickname } }) // Include Chat component
+          {
+            tag: 'div',
+            attrs: {
+              id: 'chat-toggle',
+              onclick: () => {
+                document.getElementById('chat-area').classList.toggle('collapsed');
+              }
+            },
+            children: ['💬']
+          },
+          Chat({ playerID: user.id, nickname: user.nickname })
         ]
-      },
+      }
     ]
   };
 }

@@ -1,5 +1,38 @@
 @import url('https://fonts.cdnfonts.com/css/twilight');
 
+#app {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes growTitle {
+    from {
+      transform: scale(0.2);
+      opacity: 0;
+    }
+    60% {
+      opacity: 1;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeInInfo {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
 #title {
     font-family: 'Twilight', sans-serif;
     font-size: 5em;
@@ -7,6 +40,8 @@
     color: #fff;
     text-align: center;
     margin-top: 20px;
+    opacity: 0;
+    animation: growTitle 4s cubic-bezier(0.23, 1.02, 0.67, 1.01) forwards;
 }
 
 #info-text {
@@ -14,6 +49,10 @@
     font-size: 2em;
     color: #fff;
     text-align: center;
+    text-align: center;
+    opacity: 0;
+    animation: fadeInInfo 0.8s ease-in forwards;
+    animation-delay: 4.1s;
 }
 
 #nickname-input {
@@ -38,6 +77,49 @@
     margin: 20px auto;
 }
 
+.lobby-container {
+    margin: 20px;
+    padding-bottom: 20px;
+    max-width: 800px;
+    background-color: #4f675490;
+    border-radius: 15px;
+    color: white;
+    text-align: center;
+    overflow-y: auto;
+}
+
+.lobby-container h1 {
+    font-family: 'Twilight', sans-serif;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+}
+
+.lobby-container ul {
+    padding: 0;
+}
+
+.lobby-container li {
+    text-align: center;
+    list-style: none;
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+.lobby-container p {
+    font-size: 1.2em;
+    margin: 10px 0;
+}
+
+.info-section {
+    margin: 20px;
+    padding: 20px;
+    /* break into rows if overflow */
+    max-width: 700px;;
+    background-color: rgba(0, 0, 0, 0.442);
+    border-radius: 10px;
+    color: #fff;
+}
+
 h2 {
     font-family: 'Twilight', sans-serif;
     color: #fff;
@@ -59,34 +141,31 @@ h2 {
 }
 
 .wall {
-  background-image: url("../assets/wall.png");
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-  /* position: absolute; */
+    background-image: url('../assets/wall.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .destructible-wall {
-  background-image: url("../assets/brick.png");
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-  /* position: absolute; */
-  z-index: 5;
+    background-image: url('../assets/brick.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 5;
 }
 
 .player {
-  width: 60px;
-  height: 60px;
-  background-size: cover;
-  background-position: center;
-
-  border: none; /* remove border if not needed */
-  border-radius: 0; /* remove if your image isn't circular */
-  /* position: absolute; */
-  top: 0px;
-  left: 0px;
-  z-index: 10;
+    width: 60px;
+    height: 60px;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.2s ease-out;
+    border: none;
+    border-radius: 0;
+    top: 0px;
+    left: 0px;
+    z-index: 10;
 }
 
 .player1 {
@@ -126,16 +205,27 @@ h2 {
 }
 
 body {
-  background-image: url("../assets/woods.png");
+  /* background-image: url("../assets/woods.png");
   background-size: cover;
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center; */
   height: 100vh;
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
+#background-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: -1;
+  }
+  
 
 #elimination-message {
   position: fixed;
@@ -163,20 +253,112 @@ body {
   text-align: center;
 }
 
-.leave-game-button {
-    top: 10px;
-    right: 10px;
-    padding: 5px 10px;
-    margin-bottom: 10px;
-    background-color: #d9d9d9;
-    color:#333;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 1000;
+#game-page-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Add this to your existing CSS: */
+#chat-area {
+    position: fixed;
+    left: 20px;
+    bottom: 0;
+    z-index: 1001;
+    transition: transform 0.3s ease-in-out;
+}
+
+#chat-area.collapsed {
+    transform: translateY(calc(100% - 40px)); /* Show only the toggle (40px height) */
+}
+
+#chat-toggle {
+    width: 320px;
+    height: 40px;
+    background-color: #4f6754;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-size: 24px;
+}
+
+#chat-container {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    margin-top: 0;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    border-left: none;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+#chat {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-message {
+    background-color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 18px;
+    border-top-left-radius: 4px;
+    max-width: 80%;
+    align-self: flex-start;
+    word-wrap: break-word;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.chat-message.my-message {
+    background-color: #9cc9a5;
+    align-self: flex-end;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 4px;
+}
+
+.chat-nickname {
+    font-weight: bold;
+    color: #4f6754;
+;
+    margin-right: 5px;
+}
+
+.chat-text {
+    color: #333;
+}
+
+#chat-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#send-chat {
+    padding: 8px 12px;
+    border: none;
+    background-color: #4f6754;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#send-chat:hover {
+    background-color: #5c805c;
+    transition: background-color 0.3s ease;
+}
 
 .power-up {
   width: 60px;
@@ -190,14 +372,19 @@ body {
   animation: pulse 1s infinite;
 }
 
-/* Bomb power-up (existing) */
+/* Bomb power-up*/
 .power-up[data-powerup-type="bomb"] {
   background-image: url("../assets/powerup_bomb.png");
 }
 
-/* Flame power-up (new) */
+/* Flame power-up*/
 .power-up[data-powerup-type="flame"] {
   background-image: url("../assets/powerup_range.png");
+}
+
+/* Speed power-up*/
+.power-up[data-powerup-type="speed"] {
+  background-image: url("../assets/powerup_speed.png");
 }
 
 @keyframes pulse {
@@ -208,4 +395,26 @@ body {
   50% {
     transform: scale(1.1);
   }
+}
+
+#player-lives {
+    margin-bottom: 10px;
+}
+
+#music-btn {
+    background-image: url("../assets/volume.png");
+    background-color: transparent;
+    width: 30px;
+    height: 30px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: none;
+    cursor: pointer;
+    position: fixed;      
+    bottom: 20px;   
+    left: 20px;    
+    top: auto;      
+    right: auto;          
+    z-index: 1002;        
 }

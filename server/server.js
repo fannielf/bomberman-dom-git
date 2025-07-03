@@ -85,6 +85,7 @@ server.on('connection', ws => {
       case 'leaveGame':
         deActivatePlayer(id); // Deactivate player
         clients.delete(id); // Remove client from the map
+        break;
 
       default: // Handle unknown message types
         sendMsg(ws, { type: 'error', message: 'Unknown message type' });

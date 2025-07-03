@@ -10,6 +10,11 @@ const MOVE_INTERVAL = 100; // move every 100ms
 export let gameEnded = false;
 
 function handleKeyDown(e) {
+  // If the user is typing in the chat input, do not handle game controls.
+  if (document.activeElement.id === 'chat-input') {
+    return;
+  }
+
   console.log("Key pressed:", e.key);
   // Prevent default browser actions for arrow keys
   if (
@@ -95,6 +100,8 @@ export function renderStaticBoard(map) {
 }
 
 export function renderPlayers(players, width) {
+  document.querySelectorAll(".player").forEach(div => { div.remove(); });
+
   players.forEach((p, i) => {
     if (!p.position || !p.alive) return;
     const index = p.position.y * width + p.position.x;
@@ -103,9 +110,10 @@ export function renderPlayers(players, width) {
     );
     if (!cell) return;
 
-    cell.classList.add("player", "player" + (i + 1));
-    cell.dataset.playerClass = "player" + (i + 1);
-    cell.dataset.playerId = p.id;
+    const avatarDiv = document.createElement("div");
+    avatarDiv.classList.add("player", p.avatar);
+    avatarDiv.dataset.playerId = p.id;
+    cell.appendChild(avatarDiv);
   });
 }
 
@@ -152,15 +160,15 @@ export function placeBomb(bomb) {
 }
 
 export function updatePlayer(player) {
-  const { id, position, lives, alive } = player;
-  const board = document.getElementById("game-board");
+  const { id, position, alive } = player;
+
   const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
 
   if (!avatar || !position) return;
-  if (avatar.parentElement) {
-    avatar.parentElement.classList.toggle("alive", alive);
-    avatar.parentElement.classList.toggle("dead", !alive);
-  }
+
+  // avatar.classList.toggle("alive", alive);  // do we need this?
+  avatar.classList.toggle("dead", !alive);
+  
 }
 
 export function leaveGame(id) {
@@ -175,28 +183,22 @@ export function updatePlayerPosition(id, position) {
   const board = document.getElementById("game-board");
   if (!board) return;
 
-  const cell = document.querySelector(`.cell.player[data-player-id="${id}"]`);
-  if (!cell) return;
-  const playerClass = cell.dataset.playerClass;
-  if (!playerClass) return;
-  const playerId = cell.dataset.playerId;
-  if (!playerId) return;
-
+  const avatarDiv = document.querySelector(`.player[data-player-id="${id}"]`);
+  if (!avatarDiv) return;
+  
   const newCell = board.querySelector(
     `.cell[data-row="${position.y}"][data-col="${position.x}"]`
   );
   if (!newCell) return;
 
   // Remove avatar from old cell
-
-  cell.classList.remove("player", playerClass);
-  delete cell.dataset.playerClass;
-  delete cell.dataset.playerId;
+  if (avatarDiv.parentElement) {
+    avatarDiv.parentElement.removeChild(avatarDiv);
+  }
 
   // Add avatar to new cell
-  newCell.classList.add("player", playerClass);
-  newCell.dataset.playerClass = playerClass;
-  newCell.dataset.playerId = playerId;
+  newCell.appendChild(avatarDiv);
+
 }
 
 // Add this function to render power-ups:
@@ -224,6 +226,8 @@ export function renderPowerUps(powerUps, width) {
       powerUpEl.title = "+1 Bomb";
     } else if (powerUp.type === "flame") {
       powerUpEl.title = "+1 Range";
+    } else if (powerUp.type === "speed") {
+      powerUpEl.title = "+50% Speed";
     }
 
     cell.appendChild(powerUpEl);

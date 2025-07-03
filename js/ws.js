@@ -24,14 +24,12 @@ function connect() {
         emit('readyTimer', { countdown: msg.countdown });
         break;
     case 'gameState':
-        // setState({ page: '/game' });
         window.location.hash = '/game'; // Redirect to game page
         sendMessage({ type: 'gameStart'});
         break;
     case 'playerExists':
         // If player already exists, redirect to lobby
         window.location.hash = '/lobby'; // Redirect to lobby page
-        // setState({ page: '/lobby' });
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });
         break;
     case 'chat':
@@ -40,9 +38,6 @@ function connect() {
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
     case 'error':
-        if (msg.message === 'Client not found by id') {
-            reset();
-        }
         emit('showError', msg.message);
         break;
     case 'playerCount':
