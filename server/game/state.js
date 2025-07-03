@@ -135,22 +135,32 @@ function explodeBomb(bombId) {
   if (bombIndex === -1) return;
 
   const [bomb] = gameState.bombs.splice(bombIndex, 1);
-  const explosionTiles = new Set();
+
+  // Directions: center, right, left, down, up
   const directions = [
-    { x: 0, y: 0 }, // center
-    { x: 1, y: 0 }, // right
-    { x: -1, y: 0 }, // left
-    { x: 0, y: 1 }, // down
-    { x: 0, y: -1 }, // up
+    { dx: 0, dy: 0 },  // center
+    { dx: 1, dy: 0 },  // right
+    { dx: -1, dy: 0 }, // left
+    { dx: 0, dy: 1 },  // down
+    { dx: 0, dy: -1 }, // up
   ];
 
-  explosionTiles.add(`${bomb.position.x},${bomb.position.y}`);
+  const explosionTiles = [];
 
-  // Calculate explosion in each direction
-  for (const dir of directions.slice(1)) {
-    for (let i = 1; i <= bomb.range; i++) { // Use bomb.range instead of fixed distance
-      const x = bomb.position.x + (dir.x * i);
-      const y = bomb.position.y + (dir.y * i);
+  // Always add the center
+  explosionTiles.push({
+    x: bomb.position.x,
+    y: bomb.position.y,
+    dx: 0,
+    dy: 0,
+    distance: 0
+  });
+
+  // For each direction (skip center)
+  for (const { dx, dy } of directions.slice(1)) {
+    for (let dist = 1; dist <= bomb.range; dist++) {
+      const x = bomb.position.x + dx * dist;
+      const y = bomb.position.y + dy * dist;
 
       if (y < 0 || y >= gameState.map.height || x < 0 || x >= gameState.map.width)
         break;
@@ -158,29 +168,29 @@ function explodeBomb(bombId) {
       const tile = gameState.map.tiles[y][x];
       if (tile === "wall") break; // Stop at walls
 
-      explosionTiles.add(`${x},${y}`);
+      explosionTiles.push({
+        x, y,
+        dx, dy,
+        distance: dist
+      });
 
       if (tile === "destructible-wall") {
         gameState.map.tiles[y][x] = "empty";
-        
         // 30% chance to spawn power-up if any remaining
         if (Math.random() < 0.3) {
           const availableTypes = [];
           if (gameState.powerUpCounts.bomb > 0) availableTypes.push("bomb");
           if (gameState.powerUpCounts.flame > 0) availableTypes.push("flame");
           if (gameState.powerUpCounts.speed > 0) availableTypes.push("speed");
-          
+
           if (availableTypes.length > 0) {
             const powerUpType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-            
             gameState.map.powerUps.push({
               id: crypto.randomUUID(),
               type: powerUpType,
               x: x,
               y: y,
             });
-            
-            // Decrease the count
             gameState.powerUpCounts[powerUpType]--;
           }
         }
@@ -193,23 +203,18 @@ function explodeBomb(bombId) {
   const hitPlayers = [];
   for (const player of players.values()) {
     if (!player.alive || !player.position) continue;
-    const key = `${player.position.x},${player.position.y}`;
-    if (explosionTiles.has(key)) {
+    if (explosionTiles.some(t => t.x === player.position.x && t.y === player.position.y)) {
       hitPlayers.push(player);
     }
   }
 
-  // renew the lives and status of players hit by the explosion
   for (const player of hitPlayers) {
     looseLife(player.id);
   }
 
   const explosion = {
     id: crypto.randomUUID(),
-    tiles: Array.from(explosionTiles).map((t) => {
-      const [x, y] = t.split(",").map(Number);
-      return { x, y };
-    }),
+    tiles: explosionTiles,
   };
 
   gameState.explosions.push(explosion);
@@ -221,17 +226,6 @@ function explodeBomb(bombId) {
     updatedMap: gameState.map,
     players: Array.from(players.values()),
   });
-
-  // // Remove the explosion visual after a short time
-  // setTimeout(() => {
-  //   const explosionIndex = gameState.explosions.findIndex(
-  //     (e) => e.id === explosion.id
-  //   );
-  //   if (explosionIndex !== -1) {
-  //     gameState.explosions.splice(explosionIndex, 1);
-  //     broadcast({ type: "explosionEnded", explosionId: explosion.id });
-  //   }
-  // }, 500);
 }
 
 function getPlayerState(id) {

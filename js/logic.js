@@ -175,13 +175,68 @@ export function showExplosion(explosion) {
   const board = document.getElementById("game-board");
   if (!board) return;
 
-  // Use the tiles from the server's explosion data
+  function getExplosionType(tile) {
+    if (tile.dx === 0 && tile.dy === 0) return "center";
+    // End if it's the farthest in its direction
+    const isEnd = tile.distance === Math.max(
+      ...explosion.tiles.filter(t => t.dx === tile.dx && t.dy === tile.dy).map(t => t.distance)
+    );
+    if (isEnd) {
+      if (tile.dx === 0 && tile.dy === -1) return "end_up";
+      if (tile.dx === 0 && tile.dy === 1) return "end_down";
+      if (tile.dx === -1 && tile.dy === 0) return "end_left";
+      if (tile.dx === 1 && tile.dy === 0) return "end_right";
+    }
+    // Directional middle pieces
+    if (tile.dx === 0 && tile.dy === -1) return "vertical_up";
+    if (tile.dx === 0 && tile.dy === 1) return "vertical_down";
+    if (tile.dy === 0 && tile.dx === -1) return "horizontal_right";
+    if (tile.dy === 0 && tile.dx === 1) return "horizontal_left";
+    return "center";
+  }
+
   explosion.tiles.forEach((tile) => {
     const { x, y } = tile;
     const cell = board.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
     if (cell) {
       const explosionEl = document.createElement("div");
       explosionEl.className = `explosion explosion-${explosion.id}`;
+
+      // Determine which PNG to use
+      const type = getExplosionType(tile);
+      let img = "";
+      switch (type) {
+        case "center":
+          img = "flame_center.png";
+          break;
+        case "vertical_up":
+          img = "flame_vertical_up.png";
+          break;
+        case "vertical_down":
+          img = "flame_vertical_down.png";
+          break;
+        case "horizontal_left":
+          img = "flame_horizontal_left.png";
+          break;
+        case "horizontal_right":
+          img = "flame_horizontal_right.png";
+          break;
+        case "end_up":
+          img = "flame_top.png";
+          break;
+        case "end_down":
+          img = "flame_bottom.png";
+          break;
+        case "end_left":
+          img = "flame_left.png";
+          break;
+        case "end_right":
+          img = "flame_right.png";
+          break;
+        default:
+          img = "flame_center.png";
+      }
+      explosionEl.style.backgroundImage = `url('../assets/${img}')`;
       cell.appendChild(explosionEl);
 
       // If a destructible wall was there, remove its class
@@ -191,12 +246,11 @@ export function showExplosion(explosion) {
     }
   });
 
-  // Remove explosion visual after a short delay
   setTimeout(() => {
     board
       .querySelectorAll(`.explosion-${explosion.id}`)
       .forEach((el) => el.remove());
-  }, 500); // Keep visible for 0.5 seconds
+  }, 700);
 }
 
 export function placeBomb(bomb) {
