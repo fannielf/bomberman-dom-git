@@ -8,7 +8,7 @@ const TILE_SIZE = 60; // The size of one tile in pixels
 let gameLoopActive = false;
 const keysPressed = new Set();
 let lastMoveTime = 0;
-const MOVE_INTERVAL = 100; // move every 100ms
+const MOVE_INTERVAL = 50; // Send move requests more often
 export let gameEnded = false;
 
 function handleKeyDown(e) {
@@ -52,8 +52,8 @@ function clientRenderLoop() {
     const now = Date.now();
     const timeSinceUpdate = now - player.lastUpdateTime;
     
-    // Use player-specific speed for move duration. Must match server's baseCooldown.
-    const baseCooldown = 200; 
+    // Use player-specific speed for move duration. Must match server's new baseCooldown.
+    const baseCooldown = 100;
     const moveDuration = baseCooldown / (player.speed || 1);
 
     // Clamp progress between 0 and 1
@@ -258,12 +258,28 @@ export function updatePlayerPosition(id, position) {
 // Add this function to render power-ups:
 
 export function renderPowerUps(powerUps, width) {
-  // Clear ALL existing power-ups first
-  document.querySelectorAll(".power-up").forEach((el) => el.remove());
-
   if (!powerUps) return;
 
+  const board = document.getElementById("game-board");
+  if (!board) return;
+
+  const existingPowerUpIds = new Set(powerUps.map(p => p.id));
+  const powerUpElements = board.querySelectorAll(".power-up");
+
+  // Remove power-ups that are no longer in the state
+  powerUpElements.forEach(el => {
+    if (!existingPowerUpIds.has(el.dataset.powerupId)) {
+      el.remove();
+    }
+  });
+
+  // Add new power-ups
   powerUps.forEach((powerUp) => {
+    // Check if the power-up element already exists
+    if (board.querySelector(`[data-powerup-id="${powerUp.id}"]`)) {
+      return; // Already exists, do nothing
+    }
+
     const index = powerUp.y * width + powerUp.x;
     const cell = document.querySelector(
       `#game-board .cell:nth-child(${index + 1})`

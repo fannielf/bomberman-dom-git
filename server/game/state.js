@@ -40,7 +40,7 @@ function addPlayer(client) {
     lives: 3,
     alive: true,
     position: { ...position },
-    speed: 1, // Default speed
+    speed: 0.8, // Default speed
     bombRange: 1, // Default bomb range
     bombCount: 1, // Default bomb count
     tempPowerUps: [],
@@ -255,7 +255,7 @@ function handlePlayerMove(id, direction) {
   // Check movement cooldown based on player speed
   const now = Date.now();
   const lastMoveTime = playerMoveCooldowns.get(id) || 0;
-  const baseCooldown = 200; // Base 200ms between moves (slower for testing)
+  const baseCooldown = 100;
   const speedCooldown = baseCooldown / player.speed; // Faster = shorter cooldown
   
   if (now - lastMoveTime < speedCooldown) {
@@ -302,8 +302,8 @@ function handlePlayerMove(id, direction) {
         // Permanent range increase
         player.bombRange += 1;
       } else if (powerUp.type === "speed") {
-        // Permanent speed increase (50% faster)
-        player.speed = Math.round(player.speed * 1.5);
+        // Increase speed by a fixed amount for a more linear progression.
+        player.speed += 0.25;
       }
 
       gameState.map.powerUps.splice(powerUpIndex, 1);
