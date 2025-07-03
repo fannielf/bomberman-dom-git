@@ -10,7 +10,6 @@ const keysPressed = new Set();
 let lastMoveTime = 0;
 const MOVE_INTERVAL = 100; // move every 100ms
 export let gameEnded = false;
-export let gameFull = false;
 export let gameStarted = false
 
 
@@ -106,6 +105,8 @@ function gameLoop(timestamp) {
 
 export function startGame() {
   if (gameLoopActive) return;
+  updateGameEnded(false); // Reset gameEnded state
+  updateGameStarted(true); // Set gameStarted state to true
   gameLoopActive = true;
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);

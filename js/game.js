@@ -1,9 +1,11 @@
 import { Chat } from "./chat.js";
 import { sendMessage } from "./ws.js";
-import { stopGame, gameStarted, updateGameStarted } from "./logic.js";
+import { stopGame, gameStarted } from "./logic.js";
 import { emit } from "../framework/index.js";
 
 export function Game() {
+
+  if (gameStarted) return; // Prevent multiple game instances
 
   console.log("Game component loaded");
 
@@ -14,10 +16,6 @@ export function Game() {
     console.log("No user found");
     emit('reset');
     return;
-  }
-
-  if (!gameStarted && user.id) {
-    updateGameStarted(true);
   }
 
   return {

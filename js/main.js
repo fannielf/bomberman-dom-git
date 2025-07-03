@@ -1,6 +1,6 @@
 import { emit } from "../framework/index.js";
 import { sendMessage, error } from "./ws.js";
-import { gameEnded, gameFull, updateGameStarted } from "./logic.js";
+import { gameEnded, gameStarted, updateGameStarted } from "./logic.js";
 
 export function Main() {
   console.log('Main component loaded');
@@ -45,7 +45,7 @@ return {
       tag: 'button',
       attrs: {
         id: 'join-btn',
-        disabled: gameFull,
+        disabled: gameStarted,
         onclick: () => {
           nickname = document.getElementById('nickname-input').value.trim();
           if (!nickname) {
