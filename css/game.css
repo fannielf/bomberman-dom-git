@@ -111,6 +111,7 @@ h2 {
   position: absolute;
   top: 1px;
   left: 1px;
+  animation: pulse 1s infinite;
   z-index: 9;
 }
 
