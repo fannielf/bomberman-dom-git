@@ -1,4 +1,4 @@
-import { clients } from "./connection.js";
+import { clients, broadcast } from "./connection.js";
 import { addPlayer, startCountdown } from "../game/state.js";
 
 let waitTimer = null;
@@ -35,18 +35,26 @@ export function handleJoin(id, ws, data) {
 
 export function readyTimer() {
     if (clients.size === 2 && !waitTimer) {
-      firstJoinTime = Date.now(); // Record the time of the first join
+      firstJoinTime = Date.now();
+      
+      // Broadcast initial waiting message
+      broadcast({ type: 'waitingTimer', timeLeft: 2 });
+      
       waitTimer = setInterval(() => {
         if (clients.size < 2) {
           clearInterval(waitTimer);
           waitTimer = null;
           firstJoinTime = null;
-        } else if (clients.size === 4) { // If 4 players have joined, start the countdown
+        } else if (clients.size === 4) {
           statusCountdown();
-        } else if (Date.now() - firstJoinTime > 2000) { // If no new joins after 20 seconds, reset
+        } else if (Date.now() - firstJoinTime > 2000) {
           if (clients.size >= 2) {
-          statusCountdown();
+            statusCountdown();
           }
+        } else {
+          // Calculate and broadcast remaining time
+          const timeLeft = Math.ceil((2000 - (Date.now() - firstJoinTime)) / 1000);
+          broadcast({ type: 'waitingTimer', timeLeft });
         }
       }, 1000); // Check every second
     }

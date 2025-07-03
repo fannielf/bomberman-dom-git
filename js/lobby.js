@@ -50,6 +50,11 @@ export function Lobby() {
             children: []
           },
           {
+            tag: 'p',
+            attrs: { id: 'timer' },
+            children: []
+          },
+          {
             tag: 'div',
             attrs: { id: 'chat-area', class: 'collapsed' },
             children: [
