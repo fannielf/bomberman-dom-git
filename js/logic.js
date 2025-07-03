@@ -6,6 +6,9 @@ const keysPressed = new Set();
 let lastMoveTime = 0;
 const MOVE_INTERVAL = 100; // move every 100ms
 export let gameEnded = false;
+export let gameFull = false;
+export let gameStarted = false
+
 
 function handleKeyDown(e) {
   // If the user is typing in the chat input, do not handle game controls.
@@ -82,7 +85,10 @@ export function stopGame() {
 
 export function renderStaticBoard(map) {
   const board = document.getElementById("game-board");
-  board.innerHTML = "";
+  if (!board) return;
+  if (board.innerHTML !== "") {
+    board.innerHTML = "";
+  }
   for (let y = 0; y < map.height; y++) {
     for (let x = 0; x < map.width; x++) {
       const cell = document.createElement("div");
@@ -255,4 +261,34 @@ export function updateMapTiles(map) {
       }
     }
   }
+}
+
+// reset to start page by removing user from localStorage and redirecting to main page
+// and updating gameStarted state
+export function reset() {
+    localStorage.removeItem('user');
+    window.location.hash = '/';
+    updateGameStarted(false);
+}
+
+export function updateGameStarted(status) {
+  if (!status) return;
+    gameStarted = status;
+}
+
+export function updateGameEnded(status) {
+  if (!status) return;
+    gameEnded = status;
+}
+
+export function updateEliminationMessage() {
+      // create a div to show the message
+    const container = document.getElementById("elimination-message");
+    if (container) {
+      if (gameEnded) {
+        container.style.display = "none";
+      } else {
+        container.style.display = "block";
+      }
+    }
 }

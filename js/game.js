@@ -1,8 +1,6 @@
 import { Chat } from "./chat.js";
 import { sendMessage } from "./ws.js";
-import { stopGame } from "./logic.js";
-
-let gameStarted = false;
+import { stopGame, gameStarted, updateGameStarted } from "./logic.js";
 
 export function Game() {
 
@@ -13,19 +11,23 @@ export function Game() {
 
   if (!user) {
     console.log("No user found");
-    // window.location.hash = "/";
-    // setState({ page: "/" });
-    // return;
+    emit('reset');
+    return;
   }
 
   if (!gameStarted && user.id) {
-    gameStarted = true;
+    updateGameStarted(true);
   }
 
   return {
     tag: "div",
     attrs: { id: "game-page-container" },
     children: [
+      { 
+        tag: "div", 
+        attrs: { id: "elimination-message" }, 
+        children: ["You are out of lives! You can still watch and chat."] 
+      },
       {
         tag: "div",
         attrs: { id: "game-container" },
@@ -54,9 +56,8 @@ export function Game() {
             attrs: {
               onclick: () => {
                 sendMessage({ type: "leaveGame", id: user.id });
-                localStorage.removeItem("user");
                 stopGame(); // Stop the loop and remove listeners
-                window.location.hash = "/";
+                emit('reset');
             },
             children: ["Leave Game"],
             },

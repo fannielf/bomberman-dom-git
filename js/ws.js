@@ -1,8 +1,7 @@
-import {emit, once}  from '../framework/index.js';
+import {emit}  from '../framework/index.js';
 
 let socket;
 export let error = null;
-export let gameFull = false;
 
 function connect() {
     socket = new WebSocket('ws://localhost:8080/ws');
@@ -18,7 +17,7 @@ function connect() {
     console.log("message received:", msg)
     switch (msg.type) {
     case 'reset' :
-        reset();
+        emit('reset');
         break;
     case 'readyTimer': // Add this case
         emit('readyTimer', { countdown: msg.countdown });
@@ -102,8 +101,3 @@ export function sendMessage(message) {
   }
 }
 
-// resest to start page
-function reset() {
-    localStorage.removeItem('user'); // Remove user from local storage
-    window.location.hash = '/'; // Redirect to start page
-}
