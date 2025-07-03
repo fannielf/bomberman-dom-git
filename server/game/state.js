@@ -1,5 +1,6 @@
 import { chatHistory } from "../handlers/chat.js";
 import { broadcast, clients, sendMsg } from "../handlers/connection.js";
+import { count } from "../server.js"; // Import count from server
 
 const players = new Map();
 const playerPositions = [];
@@ -17,7 +18,7 @@ const gameState = {
   },
   bombs: [],
   explosions: [],
-  powerUpCounts: { bomb: 4, flame: 4 },
+  powerUpCounts: { bomb: 4, flame: 4, speed: 2 },
   lastUpdate: Date.now(),
 };
 
@@ -36,6 +37,7 @@ function addPlayer(client) {
   players.set(client.id, {
     id: client.id,
     nickname: client.nickname,
+    avatar: "player" + (positionIndex + 1), // Assign an avatar based on position
     lives: 3,
     alive: true,
     position: { ...position },
@@ -166,6 +168,7 @@ function explodeBomb(bombId) {
           const availableTypes = [];
           if (gameState.powerUpCounts.bomb > 0) availableTypes.push("bomb");
           if (gameState.powerUpCounts.flame > 0) availableTypes.push("flame");
+          if (gameState.powerUpCounts.speed > 0) availableTypes.push("speed");
           
           if (availableTypes.length > 0) {
             const powerUpType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
@@ -243,9 +246,22 @@ function updatePlayerPosition(id, position) {
   return false;
 }
 
+// Add movement cooldown tracking
+const playerMoveCooldowns = new Map();
+
 function handlePlayerMove(id, direction) {
   const player = players.get(id);
   if (!player || !player.alive) return;
+
+  // Check movement cooldown based on player speed
+  const now = Date.now();
+  const lastMoveTime = playerMoveCooldowns.get(id) || 0;
+  const baseCooldown = 200; // Base 200ms between moves (slower for testing)
+  const speedCooldown = baseCooldown / player.speed; // Faster = shorter cooldown
+  
+  if (now - lastMoveTime < speedCooldown) {
+    return; // Still in cooldown, ignore move request
+  }
 
   const { position } = player;
   const newPosition = { ...position };
@@ -270,6 +286,7 @@ function handlePlayerMove(id, direction) {
   if (isPositionValid(newPosition)) {
     const oldPosition = player.position;
     player.position = newPosition;
+    playerMoveCooldowns.set(id, now); // Update last move time
 
     // Check for power-up pickup
     const powerUpIndex = gameState.map.powerUps.findIndex(
@@ -285,6 +302,9 @@ function handlePlayerMove(id, direction) {
       } else if (powerUp.type === "flame") {
         // Permanent range increase
         player.bombRange += 1;
+      } else if (powerUp.type === "speed") {
+        // Permanent speed increase (50% faster)
+        player.speed = Math.round(player.speed * 1.5);
       }
 
       gameState.map.powerUps.splice(powerUpIndex, 1);
@@ -294,6 +314,18 @@ function handlePlayerMove(id, direction) {
         playerId: id,
         powerUpId: powerUp.id,
         newPowerUps: gameState.map.powerUps,
+      });
+
+      // Also broadcast the player stats update
+      broadcast({
+        type: "playerUpdate",
+        player: { 
+            id: player.id, 
+            alive: player.alive,
+            speed: player.speed, 
+            bombCount: player.bombCount, 
+            bombRange: player.bombRange 
+        },
       });
     }
 
@@ -314,12 +346,12 @@ function isPositionValid({ x, y }) {
     return false;
   }
 
-  // Check for collisions with other players
-  for (const p of players.values()) {
-    if (p.alive && p.position && p.position.x === x && p.position.y === y) {
-      return false;
-    }
-  }
+  // // Check for collisions with other players
+  // for (const p of players.values()) {
+  //   if (p.alive && p.position && p.position.x === x && p.position.y === y) {
+  //     return false;
+  //   }
+  // }
 
   return true;
 }
@@ -446,12 +478,13 @@ function getPlayerPositions() {
 function resetGameState() {
   players.clear();
   clients.clear();
+  count = 0; // Reset game start count
   gameState.status = "waiting";
   gameState.players = {};
   gameState.bombs = [];
   gameState.explosions = [];
   gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
-  gameState.powerUpCounts = { bomb: 4, flame: 4 };
+  gameState.powerUpCounts = { bomb: 4, flame: 4, speed: 2 };
 }
 
 function checkGameEnd() {

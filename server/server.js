@@ -6,7 +6,7 @@ import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby updat
 import { handleNewChat } from './handlers/chat.js'; // Import chat handling function
 
 const server = new WebSocketServer({ port: 8080 });
-let count = 0;
+export let count = 0;
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
@@ -85,6 +85,7 @@ server.on('connection', ws => {
       case 'leaveGame':
         deActivePlayer(id); // Deactivate player
         clients.delete(id); // Remove client from the map
+        break;
 
       default: // Handle unknown message types
         sendMsg(ws, { type: 'error', message: 'Unknown message type' });

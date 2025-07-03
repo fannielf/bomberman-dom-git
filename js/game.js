@@ -1,9 +1,6 @@
 import { Chat } from "./chat.js";
-import { setState } from "../framework/index.js";
 import { sendMessage } from "./ws.js";
-import { stopGame } from "./logic.js";
-
-let gameStarted = false;
+import { stopGame, gameStarted, updateGameStarted } from "./logic.js";
 
 export function Game() {
 
@@ -14,57 +11,76 @@ export function Game() {
 
   if (!user) {
     console.log("No user found");
-    // window.location.hash = "/";
-    // setState({ page: "/" });
-    // return;
+    emit('reset');
+    return;
   }
 
   if (!gameStarted && user.id) {
-    gameStarted = true;
+    updateGameStarted(true);
   }
 
   return {
     tag: "div",
-    attrs: { id: "game-container" },
+    attrs: { id: "game-page-container" },
     children: [
-      {
-        tag: "h2",
-        children: ["Bomberman"],
+      { 
+        tag: "div", 
+        attrs: { id: "elimination-message" }, 
+        children: ["You are out of lives! You can still watch and chat."] 
       },
       {
         tag: "div",
-        attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
-        children: []
-      },
-      {
-        tag: "div",
-        attrs: { id: "game-board" },
-        children:[],
-      },
-      {
-        tag: "p",
-        attrs: { id: "game-info" },
-        children: [],
-      },
-      {
-        tag: "button",
-        attrs: {
-          onclick: () => {
-            sendMessage({ type: "leaveGame", id: user.id });
-            localStorage.removeItem("user");
-            stopGame(); // Stop the loop and remove listeners
-            window.location.hash = "/";
-        },
-        children: ["Leave Game"],
-        },
+        attrs: { id: "game-container" },
+        children: [
+          {
+            tag: "h2",
+            children: ["Bomberman"],
+          },
+          {
+            tag: "div",
+            attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
+            children: []
+          },
+          {
+            tag: "div",
+            attrs: { id: "game-board" },
+            children:[],
+          },
+          {
+            tag: "p",
+            attrs: { id: "game-info" },
+            children: [],
+          },
+          {
+            tag: "button",
+            attrs: {
+              onclick: () => {
+                sendMessage({ type: "leaveGame", id: user.id });
+                stopGame(); // Stop the loop and remove listeners
+                emit('reset');
+            },
+            children: ["Leave Game"],
+            },
+          },
+        ]
       },
       {
         tag: 'div',
-        attrs: {},
+        attrs: { id: 'chat-area', class: 'collapsed' },
         children: [
-          Chat({ user: { playerID: user.id, nickname: user.nickname } }) // Include Chat component
+          {
+            tag: 'div',
+            attrs: {
+              id: 'chat-toggle',
+              onclick: () => {
+                document.getElementById('chat-area').classList.toggle('collapsed');
+              }
+            },
+            children: ['💬']
+          },
+          Chat({ playerID: user.id, nickname: user.nickname })
         ]
-      },
+      }
     ]
   };
 }

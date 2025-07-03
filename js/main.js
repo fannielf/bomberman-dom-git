@@ -1,8 +1,12 @@
-import { setState, emit } from "../framework/index.js";
-import { sendMessage, gameFull, error } from "./ws.js";
+import { emit } from "../framework/index.js";
+import { sendMessage, error } from "./ws.js";
+import { gameEnded, gameFull, updateGameStarted } from "./logic.js";
 
 export function Main() {
   console.log('Main component loaded');
+  if (gameEnded) {
+    updateGameStarted(false); // Reset gameStarted state
+  }
 
   let nickname = '';
 

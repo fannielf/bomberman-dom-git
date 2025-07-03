@@ -1,8 +1,7 @@
-import {emit, once}  from '../framework/index.js';
+import {emit}  from '../framework/index.js';
 
 let socket;
 export let error = null;
-export let gameFull = false;
 
 function connect() {
     socket = new WebSocket('ws://localhost:8080/ws');
@@ -18,20 +17,21 @@ function connect() {
     console.log("message received:", msg)
     switch (msg.type) {
     case 'reset' :
-        reset();
+        emit('reset');
         break;
-    case 'readyTimer': // Add this case
+    case 'readyTimer':
         emit('readyTimer', { countdown: msg.countdown });
         break;
+    case 'waitingTimer':
+        emit('waitingTimer', { timeLeft: msg.timeLeft });
+        break;
     case 'gameState':
-        // setState({ page: '/game' });
         window.location.hash = '/game'; // Redirect to game page
         sendMessage({ type: 'gameStart'});
         break;
     case 'playerExists':
         // If player already exists, redirect to lobby
         window.location.hash = '/lobby'; // Redirect to lobby page
-        // setState({ page: '/lobby' });
         emit('playerJoined', { id: msg.id, nickname: msg.nickname });
         break;
     case 'chat':
@@ -40,9 +40,6 @@ function connect() {
         emit('newChat', {nickname: msg.nickname, message: msg.message});
         break;
     case 'error':
-        if (msg.message === 'Client not found by id') {
-            reset();
-        }
         emit('showError', msg.message);
         break;
     case 'playerCount':
@@ -107,8 +104,3 @@ export function sendMessage(message) {
   }
 }
 
-// resest to start page
-function reset() {
-    localStorage.removeItem('user'); // Remove user from local storage
-    window.location.hash = '/'; // Redirect to start page
-}

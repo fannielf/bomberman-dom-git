@@ -1,13 +1,25 @@
 import { sendMessage } from "./ws.js";
 
+// Client-side state for smooth rendering
+const clientPlayers = new Map();
+const TILE_SIZE = 60; // The size of one tile in pixels
+
 // game loop and input handling logic
 let gameLoopActive = false;
 const keysPressed = new Set();
 let lastMoveTime = 0;
 const MOVE_INTERVAL = 100; // move every 100ms
 export let gameEnded = false;
+export let gameFull = false;
+export let gameStarted = false
+
 
 function handleKeyDown(e) {
+  // If the user is typing in the chat input, do not handle game controls.
+  if (document.activeElement.id === 'chat-input') {
+    return;
+  }
+
   console.log("Key pressed:", e.key);
   // Prevent default browser actions for arrow keys
   if (
@@ -27,6 +39,38 @@ function handleKeyDown(e) {
 
 function handleKeyUp(e) {
   keysPressed.delete(e.key.toLowerCase());
+}
+
+// NEW: Rendering loop for smooth movement
+function clientRenderLoop() {
+  if (!gameLoopActive) return;
+
+  const board = document.getElementById("game-board");
+  if (!board) return;
+
+  for (const [id, player] of clientPlayers.entries()) {
+    if (!player.element) continue;
+
+    // Interpolate position
+    const now = Date.now();
+    const timeSinceUpdate = now - player.lastUpdateTime;
+    
+    // Use player-specific speed for move duration. Must match server's baseCooldown.
+    const baseCooldown = 200; 
+    const moveDuration = baseCooldown / (player.speed || 1);
+
+    // Clamp progress between 0 and 1
+    const progress = Math.min(timeSinceUpdate / moveDuration, 1);
+
+    // Linear interpolation (lerp)
+    const visualX = player.lastPos.x + (player.targetPos.x - player.lastPos.x) * progress;
+    const visualY = player.lastPos.y + (player.targetPos.y - player.lastPos.y) * progress;
+
+    // Update CSS transform
+    player.element.style.transform = `translate(${visualX * TILE_SIZE}px, ${visualY * TILE_SIZE}px)`;
+  }
+
+  requestAnimationFrame(clientRenderLoop);
 }
 
 function gameLoop(timestamp) {
@@ -66,6 +110,7 @@ export function startGame() {
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
   requestAnimationFrame(gameLoop);
+  requestAnimationFrame(clientRenderLoop); // Start the rendering loop
 }
 
 export function stopGame() {
@@ -73,11 +118,15 @@ export function stopGame() {
   window.removeEventListener("keydown", handleKeyDown);
   window.removeEventListener("keyup", handleKeyUp);
   keysPressed.clear();
+  clientPlayers.clear(); // Clear client-side player state
 }
 
 export function renderStaticBoard(map) {
   const board = document.getElementById("game-board");
-  board.innerHTML = "";
+  if (!board) return;
+  if (board.innerHTML !== "") {
+    board.innerHTML = "";
+  }
   for (let y = 0; y < map.height; y++) {
     for (let x = 0; x < map.width; x++) {
       const cell = document.createElement("div");
@@ -93,17 +142,32 @@ export function renderStaticBoard(map) {
 }
 
 export function renderPlayers(players, width) {
+  // This function now only creates the player elements once
+  const board = document.getElementById("game-board");
+  if (!board) return;
+
   players.forEach((p, i) => {
     if (!p.position || !p.alive) return;
-    const index = p.position.y * width + p.position.x;
-    const cell = document.querySelector(
-      `#game-board .cell:nth-child(${index + 1})`
-    );
-    if (!cell) return;
 
-    cell.classList.add("player", "player" + (i + 1));
-    cell.dataset.playerClass = "player" + (i + 1);
-    cell.dataset.playerId = p.id;
+    // Create element if it doesn't exist
+    if (!clientPlayers.has(p.id)) {
+      const avatarDiv = document.createElement("div");
+      avatarDiv.classList.add("player", p.avatar);
+      avatarDiv.dataset.playerId = p.id;
+      board.appendChild(avatarDiv);
+
+      // Initialize client-side state for this player
+      clientPlayers.set(p.id, {
+        element: avatarDiv,
+        lastPos: { ...p.position },
+        targetPos: { ...p.position },
+        lastUpdateTime: Date.now(),
+        speed: p.speed, // Store initial speed
+      });
+
+      // Set initial position
+      avatarDiv.style.transform = `translate(${p.position.x * TILE_SIZE}px, ${p.position.y * TILE_SIZE}px)`;
+    }
   });
 }
 
@@ -150,14 +214,26 @@ export function placeBomb(bomb) {
 }
 
 export function updatePlayer(player) {
-  const { id, position, lives, alive } = player;
-  const board = document.getElementById("game-board");
+  const { id, alive } = player;
+
   const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
 
-  if (!avatar || !position) return;
-  if (avatar.parentElement) {
-    avatar.parentElement.classList.toggle("alive", alive);
-    avatar.parentElement.classList.toggle("dead", !alive);
+  if (!avatar) return;
+
+  // Update client-side state if it exists
+  if (clientPlayers.has(id)) {
+    const playerState = clientPlayers.get(id);
+    // Update any provided stats
+    if (player.speed !== undefined) {
+      playerState.speed = player.speed;
+    }
+  }
+
+  avatar.classList.toggle("dead", alive === false);
+  
+  if (alive === false) {
+    avatar.remove();
+    clientPlayers.delete(id);
   }
 }
 
@@ -170,31 +246,19 @@ export function leaveGame(id) {
 }
 
 export function updatePlayerPosition(id, position) {
-  const board = document.getElementById("game-board");
-  if (!board) return;
-
-  const cell = document.querySelector(`.cell.player[data-player-id="${id}"]`);
-  if (!cell) return;
-  const playerClass = cell.dataset.playerClass;
-  if (!playerClass) return;
-  const playerId = cell.dataset.playerId;
-  if (!playerId) return;
-
-  const newCell = board.querySelector(
-    `.cell[data-row="${position.y}"][data-col="${position.x}"]`
-  );
-  if (!newCell) return;
-
-  // Remove avatar from old cell
-
-  cell.classList.remove("player", playerClass);
-  delete cell.dataset.playerClass;
-  delete cell.dataset.playerId;
-
-  // Add avatar to new cell
-  newCell.classList.add("player", playerClass);
-  newCell.dataset.playerClass = playerClass;
-  newCell.dataset.playerId = playerId;
+  // This function now updates the target for interpolation
+  if (clientPlayers.has(id)) {
+    const playerState = clientPlayers.get(id);
+    
+    // The old target becomes the new starting point for interpolation.
+    playerState.lastPos = { ...playerState.targetPos };
+    
+    // The new position from the server is the new target.
+    playerState.targetPos = { ...position };
+    
+    // Reset the timer for the new interpolation segment.
+    playerState.lastUpdateTime = Date.now();
+  }
 }
 
 // Add this function to render power-ups:
@@ -222,6 +286,8 @@ export function renderPowerUps(powerUps, width) {
       powerUpEl.title = "+1 Bomb";
     } else if (powerUp.type === "flame") {
       powerUpEl.title = "+1 Range";
+    } else if (powerUp.type === "speed") {
+      powerUpEl.title = "+50% Speed";
     }
 
     cell.appendChild(powerUpEl);
@@ -251,4 +317,34 @@ export function updateMapTiles(map) {
       }
     }
   }
+}
+
+// reset to start page by removing user from localStorage and redirecting to main page
+// and updating gameStarted state
+export function reset() {
+    localStorage.removeItem('user');
+    window.location.hash = '/';
+    updateGameStarted(false);
+}
+
+export function updateGameStarted(status) {
+  if (!status) return;
+    gameStarted = status;
+}
+
+export function updateGameEnded(status) {
+  if (!status) return;
+    gameEnded = status;
+}
+
+export function updateEliminationMessage() {
+      // create a div to show the message
+    const container = document.getElementById("elimination-message");
+    if (container) {
+      if (gameEnded) {
+        container.style.display = "none";
+      } else {
+        container.style.display = "block";
+      }
+    }
 }

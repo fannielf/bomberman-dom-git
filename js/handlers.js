@@ -1,9 +1,9 @@
-import { on, render } from '../framework/index.js';
+import { on, emit } from '../framework/index.js';
 import { sendMessage } from './ws.js';
-import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, renderPowerUps, updateMapTiles } from './logic.js';
+import { startGame, updateGameEnded, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, renderPowerUps, updateMapTiles, gameEnded, reset, updateEliminationMessage } from './logic.js';
+
 
 console.log('Handlers loaded');
-let width;
 
 on('playerJoined', ({id, nickname}) => {
   localStorage.setItem('user', JSON.stringify({ id, nickname }));
@@ -15,6 +15,28 @@ on('showError', (message) => {
   const errorEl = document.getElementById('error');
   if (errorEl) errorEl.textContent = message;
 })
+
+function appendChatMessage(nickname, message) {
+  const chatContainer = document.getElementById('chat');
+  if (chatContainer) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('chat-message');
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.nickname === nickname) {
+      messageElement.classList.add('my-message');
+    }
+
+    // Use innerHTML to allow for styling of nickname and message separately
+    messageElement.innerHTML = `<span class="chat-nickname">${nickname}:</span> <span class="chat-text">${message}</span>`;
+    chatContainer.appendChild(messageElement);
+    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
+  }
+}
+
+on('newChat', ({ nickname, message }) => {
+  appendChatMessage(nickname, message);
+});
 
 on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
 
@@ -37,9 +59,7 @@ on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
   if (chatContainer && chatContainer.innerHTML === '') {
     if (chatHistory) {
       chatHistory.forEach(entry => {
-        const div = document.createElement('div');
-        div.textContent = `${entry.nickname}: ${entry.message}`;
-        chatContainer.appendChild(div);
+        appendChatMessage(entry.nickname, entry.message);
       });
     }
   }
@@ -50,7 +70,7 @@ on('updatePlayerCount', ({count, players, gameFull, chatHistory}) => {
 
 });
 
-// Add countdown handler
+// countdown handler
 on('readyTimer', ({ countdown }) => {
   const timerContainer = document.getElementById('timer');
   if (timerContainer) {
@@ -58,9 +78,16 @@ on('readyTimer', ({ countdown }) => {
   }
 });
 
+// waiting timer handler
+on('waitingTimer', ({ timeLeft }) => {
+  const timerContainer = document.getElementById('timer');
+  if (timerContainer) {
+    timerContainer.textContent = `Waiting for more players... Starting in: ${timeLeft} s`;
+  }
+});
+
 // Handle game start message
 on("gameStarted", ({ map, players, chatHistory }) => {
-  width = map.width; // Store the width for rendering players
   renderStaticBoard(map);
   renderPlayers(players, map.width);
   renderPowerUps(map.powerUps, map.width); // Add this line
@@ -69,9 +96,7 @@ on("gameStarted", ({ map, players, chatHistory }) => {
   const chatContainer = document.getElementById('chat');
   if (chatContainer && chatContainer.innerHTML === '') {
       chatHistory.forEach(entry => {
-      const div = document.createElement('div');
-      div.textContent = `${entry.nickname}: ${entry.message}`;
-      chatContainer.appendChild(div);
+        appendChatMessage(entry.nickname, entry.message);
     });
   }
 });
@@ -109,17 +134,19 @@ on("playerUpdate", ({ player }) => {
   updatePlayer(player);
 });
 
-// Handle player elimination when they lose all lives
+// Handle player elimination when they lose all lives by removing avatar and showing a message
 on("playerEliminated", ({ id }) => {
   console.log("🔥 playerEliminated EVENT TRIGGERED");
   const user = JSON.parse(localStorage.getItem("user"));
 
   if (!gameEnded && user.id === id) {
-    // create a div to show the message
-    const container = document.createElement("div");
-    container.id = "elimination-message";
-    container.innerHTML = "You are out of lives! You can still watch and chat.";
-    document.body.appendChild(container); // body or game container?
+    // remove avatar from the game board
+    const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
+    if (avatar) {
+      avatar.remove();
+    }
+    
+    updateEliminationMessage();
   }
 
 });
@@ -127,21 +154,33 @@ on("playerEliminated", ({ id }) => {
 // Handle game end
 on("gameEnded", ({ winner }) => {
   if (gameEnded) return; // Prevent multiple game end messages
-  gameEnded = true;
+  updateGameEnded(true);
+  updateEliminationMessage();
   const gameOver = document.createElement("div");
   gameOver.id = "game-over";
-  gameOver.innerHTML = `Game Over! Winner: ${winner}. <br> <button onclick="window.location.hash = '/'">Back to Menu</button>`;
+  gameOver.innerHTML = `Game Over! Winner: ${winner}. <br> <button id="back-to-menu">Back to Menu</button>`;
   document.body.appendChild(gameOver);
+
+  document.getElementById('back-to-menu').addEventListener('click', () => {
+    emit('reset');
+    const gameOverEl = document.getElementById('game-over');
+    if (gameOverEl) {
+      document.body.removeChild(gameOverEl);
+    }
+  });
 });
 
 on ("gameUpdate", ({ gameState, players, chatHistory }) => {
   // Update the game state, players, and chat history when reloaded
   renderStaticBoard(gameState.map);
   renderPlayers(players, gameState.map.width);
-});
-
-on("sendMessage", ({ msg }) => {
-  sendMessage(msg);
+  
+  const chatContainer = document.getElementById('chat');
+  if (chatContainer && chatContainer.innerHTML === '') {
+    chatHistory.forEach(entry => {
+      appendChatMessage(entry.nickname, entry.message);
+    });
+  }
 });
 
 // Handle power-up pickup
@@ -151,4 +190,8 @@ on("powerUpPickup", ({ playerId, powerUpId, newPowerUps }) => {
   if (powerUpEl) {
     powerUpEl.remove();
   }
+});
+
+on("reset", () => {
+  reset();
 });
