@@ -1,6 +1,6 @@
 import { chatHistory } from "../handlers/chat.js";
 import { broadcast, clients, sendMsg } from "../handlers/connection.js";
-import { count } from "../server/server.js"; // Import count from server
+import { count } from "../server.js"; // Import count from server
 
 const players = new Map();
 const playerPositions = [];
