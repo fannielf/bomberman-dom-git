@@ -1,5 +1,6 @@
 import { chatHistory } from "../handlers/chat.js";
 import { broadcast, clients, sendMsg } from "../handlers/connection.js";
+import { count } from "../server/server.js"; // Import count from server
 
 const players = new Map();
 const playerPositions = [];
@@ -477,6 +478,7 @@ function getPlayerPositions() {
 function resetGameState() {
   players.clear();
   clients.clear();
+  count = 0; // Reset game start count
   gameState.status = "waiting";
   gameState.players = {};
   gameState.bombs = [];

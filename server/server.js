@@ -6,7 +6,7 @@ import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby updat
 import { handleNewChat } from './handlers/chat.js'; // Import chat handling function
 
 const server = new WebSocketServer({ port: 8080 });
-let count = 0;
+export let count = 0;
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
