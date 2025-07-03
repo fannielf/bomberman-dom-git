@@ -52,9 +52,14 @@ function clientRenderLoop() {
     const now = Date.now();
     const timeSinceUpdate = now - player.lastUpdateTime;
     
-    // Use player-specific speed for move duration. Must match server's new baseCooldown.
-    const baseCooldown = 100;
-    const moveDuration = baseCooldown / (player.speed || 1);
+    // Use player-specific speed for move duration. Must match server's baseCooldown.
+    const baseCooldown = 200; 
+    let moveDuration = baseCooldown / (player.speed || 1);
+
+    // At higher speeds, reduce interpolation time to make movement feel more responsive.
+    if (player.speed > 2) {
+      moveDuration *= 0.5; // Reduce interpolation time by 50% if speed is greater than 2
+    }
 
     // Clamp progress between 0 and 1
     const progress = Math.min(timeSinceUpdate / moveDuration, 1);

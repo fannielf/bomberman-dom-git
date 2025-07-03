@@ -302,8 +302,8 @@ function handlePlayerMove(id, direction) {
         // Permanent range increase
         player.bombRange += 1;
       } else if (powerUp.type === "speed") {
-        // Increase speed by a fixed amount for a more linear progression.
-        player.speed += 0.25;
+        // Permanent speed increase (25% faster)
+        player.speed = Math.round(player.speed * 1.25);
       }
 
       gameState.map.powerUps.splice(powerUpIndex, 1);
