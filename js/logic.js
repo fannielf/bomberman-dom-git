@@ -1,4 +1,6 @@
 import { sendMessage } from "./ws.js";
+import { render } from "../framework/index.js";
+import { Game } from "./game.js";
 
 // game loop and input handling logic
 let gameLoopActive = false;
@@ -10,7 +12,9 @@ export let gameEnded = false;
 function handleKeyDown(e) {
   console.log("Key pressed:", e.key);
   // Prevent default browser actions for arrow keys
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+  if (
+    ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)
+  ) {
     e.preventDefault();
   }
   if (e.key === " ") {
@@ -73,7 +77,6 @@ export function stopGame() {
   keysPressed.clear();
 }
 
-
 export function renderStaticBoard(map) {
   const board = document.getElementById("game-board");
   board.innerHTML = "";
@@ -82,7 +85,8 @@ export function renderStaticBoard(map) {
       const cell = document.createElement("div");
       cell.className = "cell";
       if (map.tiles[y][x] === "wall") cell.classList.add("wall");
-      if (map.tiles[y][x] === "destructible-wall") cell.classList.add("destructible-wall");
+      if (map.tiles[y][x] === "destructible-wall")
+        cell.classList.add("destructible-wall");
       cell.dataset.row = y;
       cell.dataset.col = x;
       board.appendChild(cell);
@@ -94,7 +98,9 @@ export function renderPlayers(players, width) {
   players.forEach((p, i) => {
     if (!p.position || !p.alive) return;
     const index = p.position.y * width + p.position.x;
-    const cell = document.querySelector(`#game-board .cell:nth-child(${index + 1})`);
+    const cell = document.querySelector(
+      `#game-board .cell:nth-child(${index + 1})`
+    );
     if (!cell) return;
 
     cell.classList.add("player", "player" + (i + 1));
@@ -108,7 +114,7 @@ export function showExplosion(explosion) {
   if (!board) return;
 
   // Use the tiles from the server's explosion data
-  explosion.tiles.forEach(tile => {
+  explosion.tiles.forEach((tile) => {
     const { x, y } = tile;
     const cell = board.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
     if (cell) {
@@ -125,7 +131,9 @@ export function showExplosion(explosion) {
 
   // Remove explosion visual after a short delay
   setTimeout(() => {
-    board.querySelectorAll(`.explosion-${explosion.id}`).forEach(el => el.remove());
+    board
+      .querySelectorAll(`.explosion-${explosion.id}`)
+      .forEach((el) => el.remove());
   }, 500); // Keep visible for 0.5 seconds
 }
 
@@ -153,15 +161,14 @@ export function updatePlayer(player) {
     avatar.parentElement.classList.toggle("alive", alive);
     avatar.parentElement.classList.toggle("dead", !alive);
   }
-  
 }
 
 export function leaveGame(id) {
-  if (!id) return
-    sendMessage({ type: "leaveGame", id });
-    localStorage.removeItem("user");
-    stopGame(); // Stop the loop and remove listeners
-    window.location.hash = "/";
+  if (!id) return;
+  sendMessage({ type: "leaveGame", id });
+  localStorage.removeItem("user");
+  stopGame(); // Stop the loop and remove listeners
+  window.location.hash = "/";
 }
 
 export function updatePlayerPosition(id, position) {
@@ -174,24 +181,78 @@ export function updatePlayerPosition(id, position) {
   if (!playerClass) return;
   const playerId = cell.dataset.playerId;
   if (!playerId) return;
-  
+
   const newCell = board.querySelector(
     `.cell[data-row="${position.y}"][data-col="${position.x}"]`
   );
   if (!newCell) return;
-  
+
   // Remove avatar from old cell
 
-  cell.classList.remove('player', playerClass);
+  cell.classList.remove("player", playerClass);
   delete cell.dataset.playerClass;
   delete cell.dataset.playerId;
-
 
   // Add avatar to new cell
   newCell.classList.add("player", playerClass);
   newCell.dataset.playerClass = playerClass;
   newCell.dataset.playerId = playerId;
+}
 
+// Add this function to render power-ups:
+
+export function renderPowerUps(powerUps, width) {
+  // Clear ALL existing power-ups first
+  document.querySelectorAll(".power-up").forEach((el) => el.remove());
+
+  if (!powerUps) return;
+
+  powerUps.forEach((powerUp) => {
+    const index = powerUp.y * width + powerUp.x;
+    const cell = document.querySelector(
+      `#game-board .cell:nth-child(${index + 1})`
+    );
+    if (!cell) return;
+
+    const powerUpEl = document.createElement("div");
+    powerUpEl.className = "power-up";
+    powerUpEl.dataset.powerupId = powerUp.id;
+    powerUpEl.dataset.powerupType = powerUp.type; // Add type for CSS
+
+    // Set tooltip based on type
+    if (powerUp.type === "bomb") {
+      powerUpEl.title = "+1 Bomb";
+    } else if (powerUp.type === "flame") {
+      powerUpEl.title = "+1 Range";
+    }
+
+    cell.appendChild(powerUpEl);
+  });
+}
+
+export function updateMapTiles(map) {
+  const board = document.getElementById("game-board");
+  if (!board) return;
+
+  // Update only the tile classes, don't clear the entire board
+  for (let y = 0; y < map.height; y++) {
+    for (let x = 0; x < map.width; x++) {
+      const cell = board.querySelector(
+        `.cell[data-row="${y}"][data-col="${x}"]`
+      );
+      if (!cell) continue;
+
+      // Reset tile classes
+      cell.classList.remove("wall", "destructible-wall");
+
+      // Apply new tile class
+      if (map.tiles[y][x] === "wall") {
+        cell.classList.add("wall");
+      } else if (map.tiles[y][x] === "destructible-wall") {
+        cell.classList.add("destructible-wall");
+      }
+    }
+  }
 }
 
 //rerender the game component

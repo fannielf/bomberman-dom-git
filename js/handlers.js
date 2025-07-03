@@ -1,6 +1,6 @@
 import { on, render } from '../framework/index.js';
 import { sendMessage } from './ws.js';
-import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, rerenderGame } from './logic.js';
+import { startGame, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, rerenderGame, renderPowerUps, updateMapTiles } from './logic.js';
 
 console.log('Handlers loaded');
 let width;
@@ -61,10 +61,12 @@ on('readyTimer', ({ countdown }) => {
 
 // clients handler gets the message from the server when the game starts
 on("gameStarted", ({ map, players, chatHistory }) => {
+  console.log("gameStarted handler, players", players);
   currentPlayers = players; // store the current players
   width = map.width; // Store the width for rendering players
   renderStaticBoard(map); // render the empty board
   renderPlayers(players, map.width); // render players on the board
+  renderPowerUps(map.powerUps, map.width); // Add this line
   startGame(); // start the game loop
   rerenderGame(); //
 
@@ -90,13 +92,16 @@ on("bombPlaced", ({ bomb }) => {
 
 // Handle explosion
 on("explosion", ({ bombId, explosion, updatedMap, players }) => {
+  // Only remove the specific bomb that exploded
   const bombEl = document.querySelector(`.bomb-${bombId}`);
   if (bombEl) {
     bombEl.remove();
   }
 
-  renderStaticBoard(updatedMap);
+  // Update only the map tiles, don't re-render the entire board
+  updateMapTiles(updatedMap);
   renderPlayers(players, updatedMap.width);
+  renderPowerUps(updatedMap.powerUps, updatedMap.width);
   showExplosion(explosion);
 });
 
@@ -141,15 +146,24 @@ on("gameEnded", ({ winner }) => {
 
 on ("gameUpdate", ({ gameState, players, chatHistory }) => {
   // Update the game state, players, and chat history when reloaded
+  console.log("gameUpdate handler, players", players);
   currentPlayers = players;
   renderStaticBoard(gameState.map);
   renderPlayers(players, gameState.map.width);
-  renderChatHistory(chatHistory);
   rerenderGame();
 });
 
 on("sendMessage", ({ msg }) => {
   sendMessage(msg);
+});
+
+// Handle power-up pickup
+on("powerUpPickup", ({ playerId, powerUpId, newPowerUps }) => {
+  // Remove power-up from DOM
+  const powerUpEl = document.querySelector(`[data-powerup-id="${powerUpId}"]`);
+  if (powerUpEl) {
+    powerUpEl.remove();
+  }
 });
 
 on("gameReset", () => {
@@ -158,5 +172,5 @@ on("gameReset", () => {
   gameInfo = '';
   localStorage.removeItem("user"); 
   window.location.hash = "/"; 
-  //rerenderGame(); // Rerender the game component
+  rerenderGame(); // Rerender the game component
 });

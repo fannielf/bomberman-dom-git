@@ -17,6 +17,9 @@ function connect() {
     const msg = JSON.parse(event.data);
     console.log("message received:", msg)
     switch (msg.type) {
+    case 'reset' :
+        reset();
+        break;
     case 'readyTimer': // Add this case
         emit('readyTimer', { countdown: msg.countdown });
         break;
@@ -74,10 +77,17 @@ function connect() {
         emit('deActivatePlayer', { id: msg.id, nickname: msg.nickname });
         break;
     case 'gameUpdate':
-        emit('gameUpdate', {gameState: msg.gameState, players: msg.players, chatHistory: msg.chatHistory });
+        emit('gameUpdate', { gameState: msg.gameState, players: msg.players, chatHistory: msg.chatHistory });
         break;
     case 'gameEnded':
         emit('gameEnded', { winner: msg.winner });
+        break;
+    case 'powerUpPickup':
+        emit('powerUpPickup', { 
+          playerId: msg.playerId, 
+          powerUpId: msg.powerUpId,
+          newPowerUps: msg.newPowerUps 
+        });
         break;
     }
         
@@ -100,6 +110,5 @@ export function sendMessage(message) {
 // resest to start page
 function reset() {
     localStorage.removeItem('user'); // Remove user from local storage
-    // setState({ page: '/' });
     window.location.hash = '/'; // Redirect to start page
 }
