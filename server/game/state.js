@@ -59,8 +59,7 @@ export function deActivePlayer(id) {
   player.alive = false;
   player.position = null; // Remove position if player is deactivated
   player.lives = 0; // Reset lives
-  broadcast({ type: "playerDeactivated", nickname: player.nickname });
-  //removePlayer(id); // Remove player from the game
+  broadcast({ type: "playerEliminated", id: player.id, nickname: player.nickname });
   checkGameEnd();
 }
 
@@ -81,7 +80,6 @@ function looseLife(id) {
       nickname: player.nickname,
       id: player.id,
     });
-    checkGameEnd();
   } else {
     broadcast({
       type: "playerUpdate",
@@ -225,6 +223,8 @@ function explodeBomb(bombId) {
     updatedMap: gameState.map,
     players: updatedPlayers,
   });
+
+  checkGameEnd();
 
   // // Remove the explosion visual after a short time
   // setTimeout(() => {
@@ -484,7 +484,6 @@ function getPlayerPositions() {
 
 function resetGameState() {
   players.clear();
-  clients.clear();
   updateCount(true); // Reset game start count
   gameState.status = "waiting";
   gameState.players = {};
@@ -492,6 +491,7 @@ function resetGameState() {
   gameState.explosions = [];
   gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
   gameState.powerUpCounts = { bomb: 4, flame: 4, speed: 2 };
+  chatHistory.length = 0; // Clear chat history
 }
 
 function checkGameEnd() {
@@ -503,7 +503,14 @@ function checkGameEnd() {
       type: "gameEnded",
       winner: winner.nickname,
     });
-    chatHistory.length = 0; // Clear chat when game ends
+
+    setTimeout(resetGameState, 2000);
+  } else if (alivePlayers.length === 0) {
+    gameState.status = "ended";
+    broadcast({
+      type: "gameEnded",
+      winner: null, // No winner if all players are eliminated
+    });
 
     setTimeout(resetGameState, 2000);
   }

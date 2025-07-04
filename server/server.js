@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws'; // Import server from 'ws' package
-import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players, count, updateCount } from './game/state.js';
+import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players, count, updateCount, gameState, removePlayer } from './game/state.js';
 import { clients, broadcast, sendMsg, updateConnection } from './handlers/connection.js'; // Import the clients map to manage connections
 import { handleJoin, readyTimer } from './handlers/main.js';
 import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby update function
@@ -93,8 +93,14 @@ server.on('connection', ws => {
 
   // Delete connection when client disconnects
   ws.on('close', () => {
-    clients.delete(ws);
-    broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname) });
+    for (const [id, client] of clients.entries()) {
+      if (client.ws === ws) {
+            clients.delete(id);
+            broadcast({ type: 'playerCount', count: clients.size, players: Array.from(clients.values()).map(c => c.nickname) });
+        break;
+      }
+    }
+  
   });
 
 });
