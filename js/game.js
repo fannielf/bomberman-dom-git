@@ -19,6 +19,8 @@ export function Game() {
     updateGameStarted(true);
   }
 
+  document.getElementById('background-video').style.display = 'none';
+
   return {
     tag: "div",
     attrs: { id: "game-page-container" },
@@ -38,7 +40,7 @@ export function Game() {
           },
           {
             tag: "div",
-            attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
+            attrs: { id: "player-lives" },
             children: []
           },
           {

@@ -8,6 +8,31 @@
     align-items: center;
 }
 
+@keyframes growTitle {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInInfo {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #title {
     font-family: 'Twilight', sans-serif;
     font-size: 5em;
@@ -178,15 +203,25 @@ h2 {
 }
 
 body {
-  background-image: url("../assets/woods.png");
+  /* background-image: url("../assets/woods.png");
   background-size: cover;
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center; */
   height: 100vh;
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+#background-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -1;
 }
 
 #elimination-message {
@@ -391,4 +426,26 @@ button:hover {
   100% {
     transform: scale(1.4);
   }
+}
+
+#player-lives {
+  margin-bottom: 10px;
+}
+
+#music-btn {
+  background-image: url("../assets/volume.png");
+  background-color: transparent;
+  width: 30px;
+  height: 30px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: none;
+  cursor: pointer;
+  position: fixed;      
+  bottom: 20px;   
+  left: 20px;    
+  top: auto;      
+  right: auto;          
+  z-index: 1002;        
 }

@@ -55,6 +55,27 @@ export function Lobby() {
             children: []
           },
           {
+            tag: 'button',
+            attrs: {
+              id: 'music-btn',
+              onclick: () => {
+                const audio = document.getElementById('background-music');
+                const btn = document.getElementById('music-btn');
+                if (audio && btn) {
+                  if (audio.muted || audio.paused) {
+                    audio.muted = false;
+                    audio.play();
+                    btn.style.backgroundImage = 'url("./assets/volume.png")';
+                  } else {
+                    audio.muted = true;
+                    btn.style.backgroundImage = 'url("./assets/mute.png")';
+                  }
+                }
+              }
+            },
+            children: [' '] 
+          },
+          {
             tag: 'div',
             attrs: { id: 'chat-area', class: 'collapsed' },
             children: [
