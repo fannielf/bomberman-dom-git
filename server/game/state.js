@@ -6,7 +6,6 @@ const playerPositions = [];
 let readyTimer = null;
 export let count = 0;
 
-
 const gameState = {
   status: "waiting", // 'waiting' | 'countdown' | 'running' | 'ended'
   players: {}, // key = playerId
@@ -83,9 +82,14 @@ function looseLife(id) {
     });
     checkGameEnd();
   } else {
-     broadcast({
+    broadcast({
       type: "playerUpdate",
-      player: { id: player.id, nickname: player.nickname, lives: player.lives, position: player.position },
+      player: {
+        id: player.id,
+        nickname: player.nickname,
+        lives: player.lives,
+        position: player.position,
+      },
     });
 
     // Disable movement for 1 second, then reset position
@@ -97,7 +101,12 @@ function looseLife(id) {
       }
       broadcast({
         type: "playerUpdate",
-        player: { id: player.id, nickname: player.nickname, lives: player.lives, position: player.position },
+        player: {
+          id: player.id,
+          nickname: player.nickname,
+          lives: player.lives,
+          position: player.position,
+        },
       });
     }, 1000); // 1 second delay
   }
@@ -111,7 +120,7 @@ function handlePlaceBomb(playerId) {
   const activeBombs = gameState.bombs.filter(
     (b) => b.ownerId === playerId
   ).length;
-  
+
   if (activeBombs >= player.bombCount) {
     return;
   }
@@ -152,10 +161,10 @@ function explodeBomb(bombId) {
 
   // Directions: center, right, left, down, up
   const directions = [
-    { dx: 0, dy: 0 },  // center
-    { dx: 1, dy: 0 },  // right
+    { dx: 0, dy: 0 }, // center
+    { dx: 1, dy: 0 }, // right
     { dx: -1, dy: 0 }, // left
-    { dx: 0, dy: 1 },  // down
+    { dx: 0, dy: 1 }, // down
     { dx: 0, dy: -1 }, // up
   ];
 
@@ -167,7 +176,7 @@ function explodeBomb(bombId) {
     y: bomb.position.y,
     dx: 0,
     dy: 0,
-    distance: 0
+    distance: 0,
   });
 
   // For each direction (skip center)
@@ -176,16 +185,23 @@ function explodeBomb(bombId) {
       const x = bomb.position.x + dx * dist;
       const y = bomb.position.y + dy * dist;
 
-      if (y < 0 || y >= gameState.map.height || x < 0 || x >= gameState.map.width)
+      if (
+        y < 0 ||
+        y >= gameState.map.height ||
+        x < 0 ||
+        x >= gameState.map.width
+      )
         break;
 
       const tile = gameState.map.tiles[y][x];
       if (tile === "wall") break; // Stop at walls
 
       explosionTiles.push({
-        x, y,
-        dx, dy,
-        distance: dist
+        x,
+        y,
+        dx,
+        dy,
+        distance: dist,
       });
 
       if (tile === "destructible-wall") {
@@ -198,7 +214,8 @@ function explodeBomb(bombId) {
           if (gameState.powerUpCounts.speed > 0) availableTypes.push("speed");
 
           if (availableTypes.length > 0) {
-            const powerUpType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+            const powerUpType =
+              availableTypes[Math.floor(Math.random() * availableTypes.length)];
             gameState.map.powerUps.push({
               id: crypto.randomUUID(),
               type: powerUpType,
@@ -217,7 +234,11 @@ function explodeBomb(bombId) {
   const hitPlayers = [];
   for (const player of players.values()) {
     if (!player.alive || !player.position) continue;
-    if (explosionTiles.some(t => t.x === player.position.x && t.y === player.position.y)) {
+    if (
+      explosionTiles.some(
+        (t) => t.x === player.position.x && t.y === player.position.y
+      )
+    ) {
       hitPlayers.push(player);
     }
   }
@@ -232,6 +253,15 @@ function explodeBomb(bombId) {
   };
 
   gameState.explosions.push(explosion);
+
+  setTimeout(() => {
+    const explosionIndex = gameState.explosions.findIndex(
+      (e) => e.id === explosion.id
+    );
+    if (explosionIndex !== -1) {
+      gameState.explosions.splice(explosionIndex, 1);
+    }
+  }, 700); // Same timing as client-side removal
 
   broadcast({
     type: "explosion",
@@ -266,7 +296,7 @@ function handlePlayerMove(id, direction) {
   const lastMoveTime = playerMoveCooldowns.get(id) || 0;
   const baseCooldown = 100;
   const speedCooldown = baseCooldown / player.speed; // Faster = shorter cooldown
-  
+
   if (now - lastMoveTime < speedCooldown) {
     return; // Still in cooldown, ignore move request
   }
@@ -295,6 +325,17 @@ function handlePlayerMove(id, direction) {
     const oldPosition = player.position;
     player.position = newPosition;
     playerMoveCooldowns.set(id, now); // Update last move time
+
+    // Check if player walked into active explosion
+    const inExplosion = gameState.explosions.some((explosion) =>
+      explosion.tiles.some(
+        (tile) => tile.x === newPosition.x && tile.y === newPosition.y
+      )
+    );
+
+    if (inExplosion) {
+      looseLife(player.id);
+    }
 
     // Check for power-up pickup
     const powerUpIndex = gameState.map.powerUps.findIndex(
@@ -327,14 +368,14 @@ function handlePlayerMove(id, direction) {
       // Also broadcast the player stats update
       broadcast({
         type: "playerUpdate",
-        player: { 
-            id: player.id, 
-            nickname: player.nickname,
-            lives: player.lives,
-            alive: player.alive,
-            speed: player.speed, 
-            bombCount: player.bombCount, 
-            bombRange: player.bombRange 
+        player: {
+          id: player.id,
+          nickname: player.nickname,
+          lives: player.lives,
+          alive: player.alive,
+          speed: player.speed,
+          bombCount: player.bombCount,
+          bombRange: player.bombRange,
         },
       });
     }
@@ -416,7 +457,7 @@ export function startGame(ws = null) {
     map: gameState.map,
     players: Array.from(players.values()),
     chatHistory,
-  }
+  };
 
   if (ws) {
     sendMsg(ws, message);
@@ -438,22 +479,32 @@ function generateGameMap() {
       // 1. Set outer walls.
       if (row === 0 || row === height - 1 || col === 0 || col === width - 1) {
         tiles[row][col] = "wall";
-      // 2. Clear spawn corners. This must happen before pillar or destructible walls are placed.
-      // 3. Set inner "pillar" walls.
+        // 2. Clear spawn corners. This must happen before pillar or destructible walls are placed.
+        // 3. Set inner "pillar" walls.
       } else if (row % 2 === 0 && col % 2 === 0) {
         tiles[row][col] = "wall";
-      // 4. Place random destructible walls.
+        // 4. Place random destructible walls.
       } else if (
         Math.random() < 0.5 &&
         !(
           // Top-left
-          ( (row === 1 && col === 1) || (row === 1 && col === 2) || (row === 2 && col === 1) ) ||
-          // Top-right
-          ( (row === 1 && col === 13) || (row === 1 && col === 12) || (row === 2 && col === 13) ) ||
-          // Bottom-left
-          ( (row === 11 && col === 1) || (row === 11 && col === 2) || (row === 10 && col === 1) ) ||
-          // Bottom-right
-          ( (row === 11 && col === 13) || (row === 11 && col === 12) || (row === 10 && col === 13) )
+          (
+            (row === 1 && col === 1) ||
+            (row === 1 && col === 2) ||
+            (row === 2 && col === 1) ||
+            // Top-right
+            (row === 1 && col === 13) ||
+            (row === 1 && col === 12) ||
+            (row === 2 && col === 13) ||
+            // Bottom-left
+            (row === 11 && col === 1) ||
+            (row === 11 && col === 2) ||
+            (row === 10 && col === 1) ||
+            // Bottom-right
+            (row === 11 && col === 13) ||
+            (row === 11 && col === 12) ||
+            (row === 10 && col === 13)
+          )
         )
       ) {
         tiles[row][col] = "destructible-wall";
@@ -496,7 +547,7 @@ export function endGame() {
   gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
   gameState.powerUpCounts = { bomb: 4, flame: 4, speed: 2 };
   chatHistory.length = 0; // Clear chat history for the next game
-  broadcast({ type: 'lobbyReset' }); // Notify clients to reset their view
+  broadcast({ type: "lobbyReset" }); // Notify clients to reset their view
 }
 
 export function resetGameState() {
@@ -506,7 +557,8 @@ export function resetGameState() {
 
 function checkGameEnd() {
   const alivePlayers = Array.from(players.values()).filter((p) => p.alive);
-  if (alivePlayers.length <= 1) { // End game if 1 or 0 players are left
+  if (alivePlayers.length <= 1) {
+    // End game if 1 or 0 players are left
     const winner = alivePlayers.length === 1 ? alivePlayers[0] : null;
     gameState.status = "ended";
     broadcast({
