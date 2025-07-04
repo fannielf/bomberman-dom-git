@@ -1,6 +1,6 @@
 import { on, emit } from '../framework/index.js';
 import { sendMessage } from './ws.js';
-import { startGame, updateGameEnded, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, renderPowerUps, updateMapTiles, gameEnded, reset, updateEliminationMessage } from './logic.js';
+import { startGame, updateGameEnded, updatePlayerPosition, placeBomb, showExplosion, updatePlayer, renderStaticBoard, renderPlayers, renderPowerUps, updateMapTiles, gameEnded, reset, updateEliminationMessage, updateAllPlayerLives, updateSinglePlayerLives } from './logic.js';
 
 
 console.log('Handlers loaded');
@@ -90,7 +90,9 @@ on('waitingTimer', ({ timeLeft }) => {
 on("gameStarted", ({ map, players, chatHistory }) => {
   renderStaticBoard(map);
   renderPlayers(players, map.width);
-  renderPowerUps(map.powerUps);
+  renderPowerUps(map.powerUps, map.width); // Add this line
+
+  updateAllPlayerLives(players);
   startGame();
 
   const chatContainer = document.getElementById('chat');
@@ -130,10 +132,12 @@ on("explosion", ({ bombId, explosion, updatedMap, players }) => {
 
 // Handle player updates (e.g., losing a life)
 on("playerUpdate", ({ player }) => {
+  console.log("Player update", player);
   if (player.lives <= 0 || player.alive === false) {
     return;
   }
   updatePlayer(player);
+  updateSinglePlayerLives(player);
 });
 
 // Handle player elimination when they lose all lives by removing avatar and showing a message
@@ -160,7 +164,7 @@ on("gameEnded", ({ winner }) => {
   updateEliminationMessage();
   const gameOver = document.createElement("div");
   gameOver.id = "game-over";
-  gameOver.innerHTML = `Game Over! Winner: ${winner}. <br> <button id="back-to-menu">Back to Menu</button>`;
+  gameOver.innerHTML = `The shadows fall... The victor emerges: ${winner}. <br> <button id="back-to-menu">Back to Start</button>`;
   document.body.appendChild(gameOver);
 
   document.getElementById('back-to-menu').addEventListener('click', () => {
