@@ -90,7 +90,7 @@ on('waitingTimer', ({ timeLeft }) => {
 on("gameStarted", ({ map, players, chatHistory }) => {
   renderStaticBoard(map);
   renderPlayers(players, map.width);
-  renderPowerUps(map.powerUps, map.width); // Add this line
+  renderPowerUps(map.powerUps);
   startGame();
 
   const chatContainer = document.getElementById('chat');
@@ -120,9 +120,11 @@ on("explosion", ({ bombId, explosion, updatedMap, players }) => {
   }
 
   // Update only the map tiles, don't re-render the entire board
-  updateMapTiles(updatedMap);
-  renderPlayers(players, updatedMap.width);
-  renderPowerUps(updatedMap.powerUps, updatedMap.width);
+  updateMapTiles(explosion.tiles, updatedMap.powerUps); // only render the tiles that were affected by the explosion
+  for (const player of players) {
+    updatePlayer(player); // update player positions and states
+  }
+  //renderPowerUps(updatedMap.powerUps, updatedMap.width);
   showExplosion(explosion);
 });
 

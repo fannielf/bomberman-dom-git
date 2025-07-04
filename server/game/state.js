@@ -205,6 +205,9 @@ function explodeBomb(bombId) {
     looseLife(player.id);
   }
 
+  const updatedPlayers = hitPlayers.map((p) => players.get(p.id));
+
+
   const explosion = {
     id: crypto.randomUUID(),
     tiles: Array.from(explosionTiles).map((t) => {
@@ -220,7 +223,7 @@ function explodeBomb(bombId) {
     bombId: bomb.id,
     explosion,
     updatedMap: gameState.map,
-    players: Array.from(players.values()),
+    players: updatedPlayers,
   });
 
   // // Remove the explosion visual after a short time
