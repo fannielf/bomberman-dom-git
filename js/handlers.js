@@ -192,7 +192,7 @@ on("gameEnded", ({ winner }) => {
   updateEliminationMessage();
   const gameOver = document.createElement("div");
   gameOver.id = "game-over";
-  if (winner) {
+  if (winner !== null) {
     gameOver.innerHTML = `The shadows fall... The victor emerges: ${winner}. <br> <button id="back-to-menu">Back to Start</button>`;
   } else {
     gameOver.innerHTML = `"Moonlight lingers on the ruins. All have fallen." <br> <button id="back-to-menu">Back to Start</button>`;

@@ -59,7 +59,6 @@ export function deActivePlayer(id) {
   player.position = null; // Remove position if player is deactivated
   player.lives = 0; // Reset lives
   broadcast({ type: "playerEliminated", id: player.id, nickname: player.nickname });
-  checkGameEnd();
 }
 
 function looseLife(id) {
@@ -573,7 +572,7 @@ function checkGameEnd() {
     gameState.status = "ended";
     broadcast({
       type: "gameEnded",
-      winner: winner ? winner.nickname : "No one",
+      winner: winner ? winner.nickname : null,
     });
 
     setTimeout(resetGameState, 2000);
