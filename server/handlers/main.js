@@ -11,8 +11,8 @@ export function handleJoin(id, ws, data) {
       return;
     }; 
 
-  if (clients.size >= 4) { // Limit to 4 players
-    ws.send(JSON.stringify({ type: 'error', message: 'Game is full', gameFull: clients.size >= 4 }));
+  if (clients.size > 4) { // Limit to 4 players
+    ws.send(JSON.stringify({ type: 'error', message: 'Game is full', gameFull: clients.size > 4 }));
     return;
 
   } else {
@@ -25,11 +25,6 @@ export function handleJoin(id, ws, data) {
     id = crypto.randomUUID(); // create unique ID
     clients.set(id, { ws, nickname: data.nickname.trim() }); // Store id, connection andn nickname
     ws.send(JSON.stringify({ type: 'playerJoined', id: id, nickname: clients.get(id).nickname})); // Notify client of successful join
-    // if game is full, start countdown
-    if (clients.size === 4) {
-      startCountdown();
-      addPlayer();
-    }
   }
 }
 

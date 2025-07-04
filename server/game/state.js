@@ -26,7 +26,7 @@ const gameState = {
 function addPlayer(client) {
   if (
     players.has(client.id) ||
-    players.size >= 4 ||
+    players.size > 4 ||
     gameState.status !== "countdown"
   )
     return; // Prevent re-adding and limit to 4 players
