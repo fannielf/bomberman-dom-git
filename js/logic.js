@@ -490,10 +490,11 @@ function generatePlayerLives(player) {
         : ''
     }</span>`;
 
+  const speedPowerUps = Math.max(0, Math.round((player.speed - 0.5) / 0.25));
   const speedHtml = `
     <span class="player-speed">Speed: ${
-      player.speed > 1
-        ? '<img src="./assets/powerup_speed.png" alt="Speed" class="icon" />'.repeat(player.speed - 1)
+      speedPowerUps > 0
+        ? '<img src="./assets/powerup_speed.png" alt="Speed" class="icon" />'.repeat(speedPowerUps)
         : ''
     }</span>`;
 
