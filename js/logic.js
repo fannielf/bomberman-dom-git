@@ -18,6 +18,10 @@ function handleKeyDown(e) {
   if (document.activeElement.id === 'chat-input' || gameEnded ) {
     return;
   }
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user && clientPlayers.has(user.id) && clientPlayers.get(user.id).stunned) {
+    return;
+  }
 
   console.log("Key pressed:", e.key);
   // Prevent default browser actions for arrow keys
@@ -164,6 +168,7 @@ export function renderPlayers(players, width) {
         targetPos: { ...p.position },
         lastUpdateTime: Date.now(),
         speed: p.speed, // Store initial speed
+        lives: p.lives
       });
 
       // Set initial position
@@ -267,25 +272,50 @@ export function placeBomb(bomb) {
   bombEl.className = `bomb bomb-${id}`;
   cell.appendChild(bombEl);
 }
-
 export function updatePlayer(player) {
-  const { id, alive } = player;
+  const { id, alive, lives, position } = player;
 
   const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
-
   if (!avatar) return;
 
-  // Update client-side state if it exists
+   // Update client-side state if it exists
   if (clientPlayers.has(id)) {
     const playerState = clientPlayers.get(id);
-    // Update any provided stats
+
+    // If this is the first update, initialize lives
+    if (typeof playerState.lives === "undefined") {
+      playerState.lives = lives;
+    }
+
+    // Only show hurt animation if lives decreased
+    if (lives < playerState.lives) {
+      avatar.classList.add("hurt");
+      playerState.stunned = true;
+      setTimeout(() => {
+        avatar.classList.remove("hurt");
+        playerState.stunned = false;
+      }, 1000);
+    }
+
     if (player.speed !== undefined) {
       playerState.speed = player.speed;
+    }
+    playerState.lives = lives;
+
+    // update position visually if changed
+    if (
+      position &&
+      (playerState.targetPos.x !== position.x || playerState.targetPos.y !== position.y)
+    ) {
+      playerState.lastPos = { ...position };
+      playerState.targetPos = { ...position };
+      playerState.lastUpdateTime = Date.now();
+      playerState.element.style.transform = `translate(${position.x * TILE_SIZE}px, ${position.y * TILE_SIZE}px)`;
     }
   }
 
   avatar.classList.toggle("dead", alive === false);
-  
+
   if (alive === false) {
     avatar.remove();
     clientPlayers.delete(id);
@@ -301,18 +331,25 @@ export function leaveGame(id) {
 }
 
 export function updatePlayerPosition(id, position) {
-  // This function now updates the target for interpolation
   if (clientPlayers.has(id)) {
     const playerState = clientPlayers.get(id);
-    
-    // The old target becomes the new starting point for interpolation.
-    playerState.lastPos = { ...playerState.targetPos };
-    
-    // The new position from the server is the new target.
-    playerState.targetPos = { ...position };
-    
-    // Reset the timer for the new interpolation segment.
-    playerState.lastUpdateTime = Date.now();
+
+    // If the player is being reset to a spawn (e.g. after losing a life), snap instantly
+    const isTeleport = (
+      Math.abs(playerState.targetPos.x - position.x) > 1 ||
+      Math.abs(playerState.targetPos.y - position.y) > 1
+    );
+    if (isTeleport) {
+      playerState.lastPos = { ...position };
+      playerState.targetPos = { ...position };
+      playerState.lastUpdateTime = Date.now();
+      playerState.element.style.transform = `translate(${position.x * TILE_SIZE}px, ${position.y * TILE_SIZE}px)`;
+    } else {
+      // Normal movement interpolation
+      playerState.lastPos = { ...playerState.targetPos };
+      playerState.targetPos = { ...position };
+      playerState.lastUpdateTime = Date.now();
+    }
   }
 }
 

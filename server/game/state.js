@@ -83,10 +83,23 @@ function looseLife(id) {
     });
     checkGameEnd();
   } else {
-    broadcast({
+     broadcast({
       type: "playerUpdate",
-      player: { id: player.id, nickname: player.nickname, lives: player.lives },
+      player: { id: player.id, nickname: player.nickname, lives: player.lives, position: player.position },
     });
+
+    // Disable movement for 1 second, then reset position
+    setTimeout(() => {
+      const startPositions = getPlayerPositions();
+      const playerIndex = Array.from(players.keys()).indexOf(id);
+      if (startPositions[playerIndex]) {
+        player.position = { ...startPositions[playerIndex] };
+      }
+      broadcast({
+        type: "playerUpdate",
+        player: { id: player.id, nickname: player.nickname, lives: player.lives, position: player.position },
+      });
+    }, 1000); // 1 second delay
   }
 }
 
