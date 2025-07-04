@@ -20,6 +20,11 @@ export function Game() {
   }
 
   document.getElementById('background-video').style.display = 'none';
+  const bgMusic = document.getElementById('background-music');
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0; 
+}
 
   return {
     tag: "div",
@@ -36,7 +41,7 @@ export function Game() {
         children: [
           {
             tag: "h2",
-            children: ["Bomberman"],
+            children: ["Twilight Inferno"],
           },
           {
             tag: "div",

@@ -13,6 +13,10 @@ export function Main() {
   const user = JSON.parse(localStorage.getItem('user'));
   const userID = user ? user.id : null;
   document.getElementById('background-video').style.display = 'block';
+  const bgMusic = document.getElementById('background-music');
+  if (bgMusic) {
+    bgMusic.play();
+  }
 
 
 return {
