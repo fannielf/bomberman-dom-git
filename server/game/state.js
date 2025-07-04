@@ -108,7 +108,11 @@ function looseLife(id) {
           id: player.id,
           nickname: player.nickname,
           lives: player.lives,
+          alive: player.alive,
           position: player.position,
+          speed: player.speed,
+          bombCount: player.bombCount,
+          bombRange: player.bombRange,
         },
       });
     }, 1000); // 1 second delay
