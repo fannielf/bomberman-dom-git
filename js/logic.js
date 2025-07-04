@@ -350,39 +350,79 @@ export function updateEliminationMessage() {
     }
 }
 
+function generatePlayerLives(player) {
+  const lifeIcons = Array(player.lives || 0)
+    .fill('<img src="./assets/lives.png" alt="Life" class="icon" />')
+    .join('');
+
+  const bombsHtml = `
+    <span class="powerups">Power-ups: </span>
+    <span class="player-bombs">Bombs: ${
+      player.bombCount > 1
+        ? '<img src="./assets/powerup_bomb.png" alt="Bomb" class="icon" />'.repeat(player.bombCount - 1)
+        : ''
+    }</span>`;
+
+  const rangeHtml = `
+    <span class="player-range">Range: ${
+      player.bombRange > 1
+        ? '<img src="./assets/powerup_range.png" alt="Range" class="icon" />'.repeat(player.bombRange - 1)
+        : ''
+    }</span>`;
+
+  const speedHtml = `
+    <span class="player-speed">Speed: ${
+      player.speed > 1
+        ? '<img src="./assets/powerup_speed.png" alt="Speed" class="icon" />'.repeat(player.speed - 1)
+        : ''
+    }</span>`;
+
+  return `
+    <div class="player-top">
+      <span class="player-nick">${player.nickname}</span>
+      <span class="player-lives">${lifeIcons}</span>
+    </div>
+    <div class="player-bottom">
+      ${bombsHtml}
+      ${rangeHtml}
+      ${speedHtml}
+    </div>
+  `;
+}
+
+
 export function updateAllPlayerLives(players) {
   const livesEl = document.getElementById("player-lives");
   if (!livesEl || !Array.isArray(players)) return;
 
-  livesEl.innerHTML = ''; 
+  livesEl.innerHTML = '';
 
-  players.forEach(p => {
-    if (!p) return; 
+  players.forEach(player => {
+    if (!player) return;
 
-    const span = document.createElement("span");
-    span.className = "player-lives-info";
-    span.dataset.playerId = p.id;
-    span.textContent = `${p.nickname}: ${'❤️'.repeat(p.lives || 0)} `;
-    livesEl.appendChild(span);
+    const div = document.createElement("div");
+    div.className = "player-lives-info";
+    div.dataset.playerId = player.id;
+    div.innerHTML = generatePlayerLives(player);
+    livesEl.appendChild(div);
   });
 }
+
 
 export function updateSinglePlayerLives(player) {
   if (!player) return;
 
   const el = document.querySelector(`.player-lives-info[data-player-id="${player.id}"]`);
+  const livesEl = document.getElementById("player-lives");
+  if (!livesEl) return;
 
   if (el) {
-    el.textContent = `${player.nickname}: ${'❤️'.repeat(player.lives || 0)}`;
+    el.innerHTML = generatePlayerLives(player);
   } else {
-    const livesEl = document.getElementById("player-lives");
-    if (!livesEl) return;
-
-    const span = document.createElement("span");
-    span.className = "player-lives-info";
-    span.dataset.playerId = player.id;
-    span.textContent = `${player.nickname}: ${'❤️'.repeat(player.lives || 0)} `;
-    livesEl.appendChild(span);
+    const div = document.createElement("div");
+    div.className = "player-lives-info";
+    div.dataset.playerId = player.id;
+    div.innerHTML = generatePlayerLives(player);
+    livesEl.appendChild(div);
   }
 }
-
