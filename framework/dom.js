@@ -59,7 +59,7 @@ function setAttributes(el, attrs = {}) {
       for (const [prop, val] of Object.entries(value)) {
         el.style[prop] = val;
       }
-    } else if (attr === "checked" || attr === "disabled" || attr === "readonly" || attr === "autofocus") {
+    } else if (typeof attr === "boolean") {
       el[attr] = value;
     } else if (attr === "value") { // input value
       el.value = value;

@@ -8,6 +8,31 @@
     align-items: center;
 }
 
+@keyframes growTitle {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInInfo {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #title {
     font-family: 'Twilight', sans-serif;
     font-size: 5em;
@@ -93,6 +118,19 @@ h2 {
     color: #fff;
 }
 
+#game-page-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('../assets/woods.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
 #game-board {
   display: grid;
   grid-template-columns: repeat(15, 60px);
@@ -154,15 +192,16 @@ h2 {
 }
 
 .bomb {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   background-image: url("../assets/bomb.png");
   background-size: cover;
   background-position: center;
   position: absolute;
   top: 1px;
-  left: 1px;
+  left: 10px;
   z-index: 9;
+  animation: bomb-pulse 3s infinite;
 }
 
 .explosion {
@@ -177,15 +216,25 @@ h2 {
 }
 
 body {
-  background-image: url("../assets/woods.png");
+  /* background-image: url("../assets/woods.png");
   background-size: cover;
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center; */
   height: 100vh;
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+#background-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -1;
 }
 
 #elimination-message {
@@ -199,6 +248,7 @@ body {
   z-index: 1000;
   font-size: 2em;
   text-align: center;
+  display: none;
 }
 
 #game-over {
@@ -348,6 +398,21 @@ body {
   background-image: url("../assets/powerup_speed.png");
 }
 
+button {
+  font-size: 1em;
+  padding: 10px 20px;
+  background-color: #4f6754;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #5c805c;
+  transition: background-color 0.3s ease;
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -356,4 +421,42 @@ body {
   50% {
     transform: scale(1.1);
   }
+}
+
+@keyframes bomb-pulse {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  75% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.4);
+  }
+}
+
+#player-lives {
+  margin-bottom: 10px;
+}
+
+#music-btn {
+  background-image: url("../assets/volume.png");
+  background-color: transparent;
+  width: 30px;
+  height: 30px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: none;
+  cursor: pointer;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1002; /* Ensure it appears above other elements */
 }

@@ -1,10 +1,11 @@
 import { Chat } from "./chat.js";
 import { sendMessage } from "./ws.js";
-import { stopGame } from "./logic.js";
-
-let gameStarted = false;
+import { stopGame, gameStarted } from "./logic.js";
+import { emit } from "../framework/index.js";
 
 export function Game() {
+
+  if (gameStarted) return; // Prevent multiple game instances
 
   console.log("Game component loaded");
 
@@ -13,30 +14,37 @@ export function Game() {
 
   if (!user) {
     console.log("No user found");
-    // window.location.hash = "/";
-    // setState({ page: "/" });
-    // return;
+    emit('reset');
+    return;
   }
 
-  if (!gameStarted && user.id) {
-    gameStarted = true;
-  }
+  document.getElementById('background-video').style.display = 'none';
+  const bgMusic = document.getElementById('background-music');
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0; 
+}
 
   return {
     tag: "div",
     attrs: { id: "game-page-container" },
     children: [
+      { 
+        tag: "div", 
+        attrs: { id: "elimination-message" }, 
+        children: ["You are out of lives! You can still watch and chat."] 
+      },
       {
         tag: "div",
         attrs: { id: "game-container" },
         children: [
           {
             tag: "h2",
-            children: ["Bomberman"],
+            children: ["Twilight Inferno"],
           },
           {
             tag: "div",
-            attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
+            attrs: { id: "player-lives" },
             children: []
           },
           {
@@ -52,14 +60,14 @@ export function Game() {
           {
             tag: "button",
             attrs: {
+              id: "leave-game-button", // Add an ID for styling
               onclick: () => {
                 sendMessage({ type: "leaveGame", id: user.id });
-                localStorage.removeItem("user");
                 stopGame(); // Stop the loop and remove listeners
-                window.location.hash = "/";
+                emit('reset');
+              },
             },
             children: ["Leave Game"],
-            },
           },
         ]
       },
