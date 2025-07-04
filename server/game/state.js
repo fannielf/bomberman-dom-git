@@ -84,11 +84,14 @@ function looseLife(id) {
   } else {
     broadcast({
       type: "playerUpdate",
-      player: {
-        id: player.id,
+      player: { 
+        id: player.id, 
         nickname: player.nickname,
         lives: player.lives,
-        position: player.position,
+        alive: player.alive,
+        speed: player.speed, 
+        bombCount: player.bombCount, 
+        bombRange: player.bombRange 
       },
     });
 
