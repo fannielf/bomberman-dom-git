@@ -18,6 +18,13 @@ export function Game() {
     return;
   }
 
+  document.getElementById('background-video').style.display = 'none';
+  const bgMusic = document.getElementById('background-music');
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0; 
+}
+
   return {
     tag: "div",
     attrs: { id: "game-page-container" },
@@ -33,11 +40,11 @@ export function Game() {
         children: [
           {
             tag: "h2",
-            children: ["Bomberman"],
+            children: ["Twilight Inferno"],
           },
           {
             tag: "div",
-            attrs: { id: "player-lives", style: "margin-bottom: 10px;" },
+            attrs: { id: "player-lives" },
             children: []
           },
           {
@@ -53,13 +60,14 @@ export function Game() {
           {
             tag: "button",
             attrs: {
+              id: "leave-game-button", // Add an ID for styling
               onclick: () => {
                 sendMessage({ type: "leaveGame", id: user.id });
                 stopGame(); // Stop the loop and remove listeners
                 emit('reset');
+              },
             },
             children: ["Leave Game"],
-            },
           },
         ]
       },
