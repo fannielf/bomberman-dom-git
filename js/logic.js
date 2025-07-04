@@ -8,7 +8,7 @@ const TILE_SIZE = 60; // The size of one tile in pixels
 let gameLoopActive = false;
 const keysPressed = new Set();
 let lastMoveTime = 0;
-const MOVE_INTERVAL = 100; // move every 100ms
+const MOVE_INTERVAL = 50; // Send move requests more often
 export let gameEnded = false;
 export let gameStarted = false
 
@@ -57,10 +57,16 @@ function clientRenderLoop() {
     // Interpolate position
     const now = Date.now();
     const timeSinceUpdate = now - player.lastUpdateTime;
-    
+
     // Use player-specific speed for move duration. Must match server's baseCooldown.
-    const baseCooldown = 200; 
-    const moveDuration = baseCooldown / (player.speed || 1);
+    const baseCooldown = 100; // Lower this value to reduce smoothing (e.g., from 200 to 100)
+    let moveDuration = baseCooldown / (player.speed || 1);
+
+    // Adjust interpolation duration for higher speeds
+    if (player.speed > 0.5) {
+      // Use an exponential reduction for a more noticeable effect at higher speeds
+      moveDuration /= Math.pow(player.speed, 0.5); // Reduce interpolation duration more aggressively
+    }
 
     // Clamp progress between 0 and 1
     const progress = Math.min(timeSinceUpdate / moveDuration, 1);
@@ -68,6 +74,8 @@ function clientRenderLoop() {
     // Linear interpolation (lerp)
     const visualX = player.lastPos.x + (player.targetPos.x - player.lastPos.x) * progress;
     const visualY = player.lastPos.y + (player.targetPos.y - player.lastPos.y) * progress;
+    const speedFactor = Math.min(player.speed, 5); // cap the player speed
+    moveDuration /= Math.pow(speedFactor, 2); // Reduce interpolation duration more aggressively
 
     // Update CSS transform
     player.element.style.transform = `translate(${visualX * TILE_SIZE}px, ${visualY * TILE_SIZE}px)`;
@@ -356,12 +364,28 @@ export function updatePlayerPosition(id, position) {
 // Add this function to render power-ups:
 
 export function renderPowerUps(powerUps, width) {
-  // Clear ALL existing power-ups first
-  document.querySelectorAll(".power-up").forEach((el) => el.remove());
-
   if (!powerUps) return;
 
+  const board = document.getElementById("game-board");
+  if (!board) return;
+
+  const existingPowerUpIds = new Set(powerUps.map(p => p.id));
+  const powerUpElements = board.querySelectorAll(".power-up");
+
+  // Remove power-ups that are no longer in the state
+  powerUpElements.forEach(el => {
+    if (!existingPowerUpIds.has(el.dataset.powerupId)) {
+      el.remove();
+    }
+  });
+
+  // Add new power-ups
   powerUps.forEach((powerUp) => {
+    // Check if the power-up element already exists
+    if (board.querySelector(`[data-powerup-id="${powerUp.id}"]`)) {
+      return; // Already exists, do nothing
+    }
+
     const index = powerUp.y * width + powerUp.x;
     const cell = document.querySelector(
       `#game-board .cell:nth-child(${index + 1})`
@@ -414,14 +438,14 @@ export function updateMapTiles(map) {
 // reset to start page by removing user from localStorage and redirecting to main page
 // and updating gameStarted state
 export function reset() {
+    stopGame();
     localStorage.removeItem('user');
     window.location.hash = '/';
     updateGameStarted(false);
 }
 
 export function updateGameStarted(status) {
-  if (!status) return;
-    gameStarted = status;
+  gameStarted = status;
 }
 
 export function updateGameEnded(status) {

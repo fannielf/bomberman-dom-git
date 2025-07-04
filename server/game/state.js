@@ -42,7 +42,7 @@ function addPlayer(client) {
     lives: 3,
     alive: true,
     position: { ...position },
-    speed: 1, // Default speed
+    speed: 0.5, // Default speed
     bombRange: 1, // Default bomb range
     bombCount: 1, // Default bomb count
     tempPowerUps: [],
@@ -264,7 +264,7 @@ function handlePlayerMove(id, direction) {
   // Check movement cooldown based on player speed
   const now = Date.now();
   const lastMoveTime = playerMoveCooldowns.get(id) || 0;
-  const baseCooldown = 200; // Base 200ms between moves (slower for testing)
+  const baseCooldown = 100;
   const speedCooldown = baseCooldown / player.speed; // Faster = shorter cooldown
   
   if (now - lastMoveTime < speedCooldown) {
@@ -311,8 +311,8 @@ function handlePlayerMove(id, direction) {
         // Permanent range increase
         player.bombRange += 1;
       } else if (powerUp.type === "speed") {
-        // Permanent speed increase (50% faster)
-        player.speed = Math.round(player.speed * 1.5);
+        // Permanent speed increase (25% faster)
+        player.speed = Math.round(player.speed * 1.25 * 100) / 100;
       }
 
       gameState.map.powerUps.splice(powerUpIndex, 1);
@@ -486,9 +486,8 @@ function getPlayerPositions() {
   return positions;
 }
 
-function resetGameState() {
+export function endGame() {
   players.clear();
-  clients.clear();
   updateCount(true); // Reset game start count
   gameState.status = "waiting";
   gameState.players = {};
@@ -496,20 +495,26 @@ function resetGameState() {
   gameState.explosions = [];
   gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
   gameState.powerUpCounts = { bomb: 4, flame: 4, speed: 2 };
+  chatHistory.length = 0; // Clear chat history for the next game
+  broadcast({ type: 'lobbyReset' }); // Notify clients to reset their view
+}
+
+export function resetGameState() {
+  endGame();
+  clients.clear();
 }
 
 function checkGameEnd() {
   const alivePlayers = Array.from(players.values()).filter((p) => p.alive);
-  if (alivePlayers.length === 1) {
-    const winner = alivePlayers[0];
+  if (alivePlayers.length <= 1) { // End game if 1 or 0 players are left
+    const winner = alivePlayers.length === 1 ? alivePlayers[0] : null;
     gameState.status = "ended";
     broadcast({
       type: "gameEnded",
-      winner: winner.nickname,
+      winner: winner ? winner.nickname : "No one",
     });
-    chatHistory.length = 0; // Clear chat when game ends
 
-    setTimeout(resetGameState, 2000);
+    setTimeout(endGame, 5000); // Reset the game board after 5 seconds
   }
 }
 

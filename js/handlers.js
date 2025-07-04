@@ -166,6 +166,10 @@ on("gameEnded", ({ winner }) => {
   document.body.appendChild(gameOver);
 
   document.getElementById('back-to-menu').addEventListener('click', () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+      sendMessage({ type: "leaveGame", id: user.id });
+    }
     emit('reset');
     const gameOverEl = document.getElementById('game-over');
     if (gameOverEl) {
