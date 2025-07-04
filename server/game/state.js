@@ -477,9 +477,8 @@ function getPlayerPositions() {
   return positions;
 }
 
-function resetGameState() {
+export function endGame() {
   players.clear();
-  clients.clear();
   updateCount(true); // Reset game start count
   gameState.status = "waiting";
   gameState.players = {};
@@ -487,20 +486,26 @@ function resetGameState() {
   gameState.explosions = [];
   gameState.map = { width: 0, height: 0, tiles: [], powerUps: [] };
   gameState.powerUpCounts = { bomb: 4, flame: 4, speed: 2 };
+  chatHistory.length = 0; // Clear chat history for the next game
+  broadcast({ type: 'lobbyReset' }); // Notify clients to reset their view
+}
+
+export function resetGameState() {
+  endGame();
+  clients.clear();
 }
 
 function checkGameEnd() {
   const alivePlayers = Array.from(players.values()).filter((p) => p.alive);
-  if (alivePlayers.length === 1) {
-    const winner = alivePlayers[0];
+  if (alivePlayers.length <= 1) { // End game if 1 or 0 players are left
+    const winner = alivePlayers.length === 1 ? alivePlayers[0] : null;
     gameState.status = "ended";
     broadcast({
       type: "gameEnded",
-      winner: winner.nickname,
+      winner: winner ? winner.nickname : "No one",
     });
-    chatHistory.length = 0; // Clear chat when game ends
 
-    setTimeout(resetGameState, 2000);
+    setTimeout(endGame, 5000); // Reset the game board after 5 seconds
   }
 }
 

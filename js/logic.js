@@ -344,14 +344,14 @@ export function updateMapTiles(map) {
 // reset to start page by removing user from localStorage and redirecting to main page
 // and updating gameStarted state
 export function reset() {
+    stopGame();
     localStorage.removeItem('user');
     window.location.hash = '/';
     updateGameStarted(false);
 }
 
 export function updateGameStarted(status) {
-  if (!status) return;
-    gameStarted = status;
+  gameStarted = status;
 }
 
 export function updateGameEnded(status) {

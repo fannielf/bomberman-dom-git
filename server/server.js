@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws'; // Import server from 'ws' package
-import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players, count, updateCount } from './game/state.js';
+import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players, count, updateCount, resetGameState } from './game/state.js';
 import { clients, broadcast, sendMsg, updateConnection } from './handlers/connection.js'; // Import the clients map to manage connections
 import { handleJoin, readyTimer } from './handlers/main.js';
 import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby update function
@@ -83,6 +83,10 @@ server.on('connection', ws => {
       case 'leaveGame':
         deActivePlayer(id); // Deactivate player
         clients.delete(id); // Remove client from the map
+        sendLobbyUpdate(); // Update lobby for remaining players
+        if (clients.size === 0) {
+          resetGameState(); // Reset if all players have left
+        }
         break;
 
       default: // Handle unknown message types
