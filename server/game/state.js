@@ -1,10 +1,11 @@
 import { chatHistory } from "../handlers/chat.js";
 import { broadcast, clients, sendMsg } from "../handlers/connection.js";
-import { count } from "../server.js"; // Import count from server
 
 const players = new Map();
 const playerPositions = [];
 let readyTimer = null;
+export let count = 0;
+
 
 const gameState = {
   status: "waiting", // 'waiting' | 'countdown' | 'running' | 'ended'
@@ -84,7 +85,7 @@ function looseLife(id) {
   } else {
     broadcast({
       type: "playerUpdate",
-      player: { id: player.id, lives: player.lives },
+      player: { id: player.id, nickname: player.nickname, lives: player.lives },
     });
   }
 }
@@ -315,6 +316,8 @@ function handlePlayerMove(id, direction) {
         type: "playerUpdate",
         player: { 
             id: player.id, 
+            nickname: player.nickname,
+            lives: player.lives,
             alive: player.alive,
             speed: player.speed, 
             bombCount: player.bombCount, 
@@ -387,6 +390,7 @@ function startCountdown() {
       }
       clearInterval(readyTimer);
       broadcast({ type: "gameState" });
+      updateCount(true); // Reset count when game starts
       readyTimer = null;
     }
   }, 10);
@@ -472,7 +476,7 @@ function getPlayerPositions() {
 function resetGameState() {
   players.clear();
   clients.clear();
-  count = 0; // Reset game start count
+  updateCount(true); // Reset game start count
   gameState.status = "waiting";
   gameState.players = {};
   gameState.bombs = [];
@@ -493,5 +497,13 @@ function checkGameEnd() {
     chatHistory.length = 0; // Clear chat when game ends
 
     setTimeout(resetGameState, 2000);
+  }
+}
+
+export function updateCount(clear = null) {
+  if (clear) {
+    count = 0;
+  } else {
+    count++;
   }
 }

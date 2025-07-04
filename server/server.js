@@ -1,12 +1,11 @@
 import { WebSocketServer } from 'ws'; // Import server from 'ws' package
-import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players } from './game/state.js';
+import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players, count, updateCount } from './game/state.js';
 import { clients, broadcast, sendMsg, updateConnection } from './handlers/connection.js'; // Import the clients map to manage connections
 import { handleJoin, readyTimer } from './handlers/main.js';
 import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby update function
 import { handleNewChat } from './handlers/chat.js'; // Import chat handling function
 
 const server = new WebSocketServer({ port: 8080 });
-export let count = 0;
 
 // Handle incoming WebSocket connections
 server.on('connection', ws => {
@@ -48,7 +47,7 @@ server.on('connection', ws => {
         break;
       
       case 'gameStart':
-      count++; // Increment the count of gameStart messages
+      updateCount(); // Increment the count of gameStart messages
       if (count === players.size) { // Check if all players are ready
         // count gameStart messages and when all ready, broadcast game start
         startGame(); // Start the game if all players are ready
@@ -71,7 +70,6 @@ server.on('connection', ws => {
       case 'pageReload': // update connection when pages are reloaded
         if (clients.has(id)) {
           updateConnection(id, ws)
-          //sendMsg(ws, 'reconnected', { id, nickname: clients.get(id).nickname });
           if (data.page === '/lobby') {
             sendLobbyUpdate(ws); // Send updated player count and list
           } else if (data.page === '/game') {

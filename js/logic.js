@@ -10,13 +10,12 @@ const keysPressed = new Set();
 let lastMoveTime = 0;
 const MOVE_INTERVAL = 100; // move every 100ms
 export let gameEnded = false;
-export let gameFull = false;
 export let gameStarted = false
 
 
 function handleKeyDown(e) {
   // If the user is typing in the chat input, do not handle game controls.
-  if (document.activeElement.id === 'chat-input') {
+  if (document.activeElement.id === 'chat-input' || gameEnded ) {
     return;
   }
 
@@ -106,6 +105,8 @@ function gameLoop(timestamp) {
 
 export function startGame() {
   if (gameLoopActive) return;
+  updateGameEnded(false); // Reset gameEnded state
+  updateGameStarted(true); // Set gameStarted state to true
   gameLoopActive = true;
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
@@ -402,3 +403,40 @@ export function updateEliminationMessage() {
       }
     }
 }
+
+export function updateAllPlayerLives(players) {
+  const livesEl = document.getElementById("player-lives");
+  if (!livesEl || !Array.isArray(players)) return;
+
+  livesEl.innerHTML = ''; 
+
+  players.forEach(p => {
+    if (!p) return; 
+
+    const span = document.createElement("span");
+    span.className = "player-lives-info";
+    span.dataset.playerId = p.id;
+    span.textContent = `${p.nickname}: ${'❤️'.repeat(p.lives || 0)} `;
+    livesEl.appendChild(span);
+  });
+}
+
+export function updateSinglePlayerLives(player) {
+  if (!player) return;
+
+  const el = document.querySelector(`.player-lives-info[data-player-id="${player.id}"]`);
+
+  if (el) {
+    el.textContent = `${player.nickname}: ${'❤️'.repeat(player.lives || 0)}`;
+  } else {
+    const livesEl = document.getElementById("player-lives");
+    if (!livesEl) return;
+
+    const span = document.createElement("span");
+    span.className = "player-lives-info";
+    span.dataset.playerId = player.id;
+    span.textContent = `${player.nickname}: ${'❤️'.repeat(player.lives || 0)} `;
+    livesEl.appendChild(span);
+  }
+}
+
