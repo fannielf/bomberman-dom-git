@@ -4,7 +4,6 @@ import { stopGame, gameStarted } from "./logic.js";
 import { emit } from "../framework/index.js";
 
 export function Game() {
-
   if (gameStarted) return; // Prevent multiple game instances
 
   console.log("Game component loaded");
@@ -14,25 +13,27 @@ export function Game() {
 
   if (!user) {
     console.log("No user found");
-    emit('reset');
+    emit("reset");
     return;
   }
 
-  document.getElementById('background-video').style.display = 'none';
-  const bgMusic = document.getElementById('background-music');
+  document.getElementById("background-video").style.display = "none";
+  const bgMusic = document.getElementById("background-music");
   if (bgMusic) {
     bgMusic.pause();
-    bgMusic.currentTime = 0; 
-}
+    bgMusic.currentTime = 0;
+  }
 
   return {
     tag: "div",
     attrs: { id: "game-page-container" },
     children: [
-      { 
-        tag: "div", 
-        attrs: { id: "elimination-message" }, 
-        children: ["You have fallen into the dusk, but still may watch and whisper among the shadows."] 
+      {
+        tag: "div",
+        attrs: { id: "elimination-message" },
+        children: [
+          "You have fallen into the dusk, but still may watch and whisper among the shadows.",
+        ],
       },
       {
         tag: "div",
@@ -45,12 +46,12 @@ export function Game() {
           {
             tag: "div",
             attrs: { id: "player-lives" },
-            children: []
+            children: [],
           },
           {
             tag: "div",
             attrs: { id: "game-board" },
-            children:[],
+            children: [],
           },
           {
             tag: "p",
@@ -64,30 +65,47 @@ export function Game() {
               onclick: () => {
                 sendMessage({ type: "leaveGame", id: user.id });
                 stopGame(); // Stop the loop and remove listeners
-                emit('reset');
+                emit("reset");
               },
             },
             children: ["Leave Game"],
           },
-        ]
+        ],
       },
       {
-        tag: 'div',
-        attrs: { id: 'chat-area', class: 'collapsed' },
+        tag: "div",
+        attrs: { id: "chat-area", class: "collapsed" },
         children: [
           {
-            tag: 'div',
+            tag: "div",
             attrs: {
-              id: 'chat-toggle',
+              id: "chat-toggle",
               onclick: () => {
-                document.getElementById('chat-area').classList.toggle('collapsed');
-              }
+                const chatArea = document.getElementById("chat-area");
+                chatArea.classList.toggle("collapsed");
+                // Hide notification when opened
+                if (!chatArea.classList.contains("collapsed")) {
+                  const notification =
+                    document.getElementById("chat-notification");
+                  if (notification) {
+                    notification.style.display = "none";
+                    window.lastNotificationCleared = Date.now();
+                  }
+                }
+              },
             },
-            children: ['💬']
+            children: [
+              "💬",
+              {
+                tag: "span",
+                attrs: { id: "chat-notification" },
+                children: ["!"],
+              },
+            ],
           },
-          Chat({ playerID: user.id, nickname: user.nickname })
-        ]
-      }
-    ]
+          Chat({ playerID: user.id, nickname: user.nickname }),
+        ],
+      },
+    ],
   };
 }

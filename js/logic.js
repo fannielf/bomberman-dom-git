@@ -8,7 +8,7 @@ const TILE_SIZE = 60; // The size of one tile in pixels
 let gameLoopActive = false;
 const keysPressed = new Set();
 let lastMoveTime = 0;
-const MOVE_INTERVAL = 100; // move every 100ms
+const MOVE_INTERVAL = 50; // Send move requests more often
 export let gameEnded = false;
 export let gameStarted = false
 
@@ -16,6 +16,10 @@ export let gameStarted = false
 function handleKeyDown(e) {
   // If the user is typing in the chat input, do not handle game controls.
   if (document.activeElement.id === 'chat-input' || gameEnded ) {
+    return;
+  }
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user && clientPlayers.has(user.id) && clientPlayers.get(user.id).stunned) {
     return;
   }
 
@@ -53,10 +57,16 @@ function clientRenderLoop() {
     // Interpolate position
     const now = Date.now();
     const timeSinceUpdate = now - player.lastUpdateTime;
-    
+
     // Use player-specific speed for move duration. Must match server's baseCooldown.
-    const baseCooldown = 200; 
-    const moveDuration = baseCooldown / (player.speed || 1);
+    const baseCooldown = 100; // Lower this value to reduce smoothing (e.g., from 200 to 100)
+    let moveDuration = baseCooldown / (player.speed || 1);
+
+    // Adjust interpolation duration for higher speeds
+    if (player.speed > 0.5) {
+      // Use an exponential reduction for a more noticeable effect at higher speeds
+      moveDuration /= Math.pow(player.speed, 0.5); // Reduce interpolation duration more aggressively
+    }
 
     // Clamp progress between 0 and 1
     const progress = Math.min(timeSinceUpdate / moveDuration, 1);
@@ -64,6 +74,8 @@ function clientRenderLoop() {
     // Linear interpolation (lerp)
     const visualX = player.lastPos.x + (player.targetPos.x - player.lastPos.x) * progress;
     const visualY = player.lastPos.y + (player.targetPos.y - player.lastPos.y) * progress;
+    const speedFactor = Math.min(player.speed, 5); // cap the player speed
+    moveDuration /= Math.pow(speedFactor, 2); // Reduce interpolation duration more aggressively
 
     // Update CSS transform
     player.element.style.transform = `translate(${visualX * TILE_SIZE}px, ${visualY * TILE_SIZE}px)`;
@@ -78,6 +90,11 @@ function gameLoop(timestamp) {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user) {
     stopGame();
+    return;
+  }
+
+  if (user && clientPlayers.has(user.id) && clientPlayers.get(user.id).stunned) {
+    requestAnimationFrame(gameLoop);
     return;
   }
 
@@ -164,6 +181,7 @@ export function renderPlayers(players, width) {
         targetPos: { ...p.position },
         lastUpdateTime: Date.now(),
         speed: p.speed, // Store initial speed
+        lives: p.lives
       });
 
       // Set initial position
@@ -176,13 +194,68 @@ export function showExplosion(explosion) {
   const board = document.getElementById("game-board");
   if (!board) return;
 
-  // Use the tiles from the server's explosion data
+  function getExplosionType(tile) {
+    if (tile.dx === 0 && tile.dy === 0) return "center";
+    // End if it's the farthest in its direction
+    const isEnd = tile.distance === Math.max(
+      ...explosion.tiles.filter(t => t.dx === tile.dx && t.dy === tile.dy).map(t => t.distance)
+    );
+    if (isEnd) {
+      if (tile.dx === 0 && tile.dy === -1) return "end_up";
+      if (tile.dx === 0 && tile.dy === 1) return "end_down";
+      if (tile.dx === -1 && tile.dy === 0) return "end_left";
+      if (tile.dx === 1 && tile.dy === 0) return "end_right";
+    }
+    // Directional middle pieces
+    if (tile.dx === 0 && tile.dy === -1) return "vertical_up";
+    if (tile.dx === 0 && tile.dy === 1) return "vertical_down";
+    if (tile.dy === 0 && tile.dx === -1) return "horizontal_right";
+    if (tile.dy === 0 && tile.dx === 1) return "horizontal_left";
+    return "center";
+  }
+
   explosion.tiles.forEach((tile) => {
     const { x, y } = tile;
     const cell = board.querySelector(`.cell[data-row="${y}"][data-col="${x}"]`);
     if (cell) {
       const explosionEl = document.createElement("div");
       explosionEl.className = `explosion explosion-${explosion.id}`;
+
+      // Determine which PNG to use
+      const type = getExplosionType(tile);
+      let img = "";
+      switch (type) {
+        case "center":
+          img = "flame_center.png";
+          break;
+        case "vertical_up":
+          img = "flame_vertical_up.png";
+          break;
+        case "vertical_down":
+          img = "flame_vertical_down.png";
+          break;
+        case "horizontal_left":
+          img = "flame_horizontal_left.png";
+          break;
+        case "horizontal_right":
+          img = "flame_horizontal_right.png";
+          break;
+        case "end_up":
+          img = "flame_top.png";
+          break;
+        case "end_down":
+          img = "flame_bottom.png";
+          break;
+        case "end_left":
+          img = "flame_left.png";
+          break;
+        case "end_right":
+          img = "flame_right.png";
+          break;
+        default:
+          img = "flame_center.png";
+      }
+      explosionEl.style.backgroundImage = `url('../assets/${img}')`;
       cell.appendChild(explosionEl);
 
       // If a destructible wall was there, remove its class
@@ -192,12 +265,11 @@ export function showExplosion(explosion) {
     }
   });
 
-  // Remove explosion visual after a short delay
   setTimeout(() => {
     board
       .querySelectorAll(`.explosion-${explosion.id}`)
       .forEach((el) => el.remove());
-  }, 500); // Keep visible for 0.5 seconds
+  }, 700);
 }
 
 export function placeBomb(bomb) {
@@ -213,25 +285,50 @@ export function placeBomb(bomb) {
   bombEl.className = `bomb bomb-${id}`;
   cell.appendChild(bombEl);
 }
-
 export function updatePlayer(player) {
-  const { id, alive } = player;
+  const { id, alive, lives, position } = player;
 
   const avatar = document.querySelector(`.player[data-player-id="${id}"]`);
-
   if (!avatar) return;
 
-  // Update client-side state if it exists
+   // Update client-side state if it exists
   if (clientPlayers.has(id)) {
     const playerState = clientPlayers.get(id);
-    // Update any provided stats
+
+    // If this is the first update, initialize lives
+    if (typeof playerState.lives === "undefined") {
+      playerState.lives = lives;
+    }
+
+    // Only show hurt animation if lives decreased
+    if (lives < playerState.lives) {
+      avatar.classList.add("hurt");
+      playerState.stunned = true;
+      setTimeout(() => {
+        avatar.classList.remove("hurt");
+        playerState.stunned = false;
+      }, 1000);
+    }
+
     if (player.speed !== undefined) {
       playerState.speed = player.speed;
+    }
+    playerState.lives = lives;
+
+    // update position visually if changed
+    if (
+      position &&
+      (playerState.targetPos.x !== position.x || playerState.targetPos.y !== position.y)
+    ) {
+      playerState.lastPos = { ...position };
+      playerState.targetPos = { ...position };
+      playerState.lastUpdateTime = Date.now();
+      playerState.element.style.transform = `translate(${position.x * TILE_SIZE}px, ${position.y * TILE_SIZE}px)`;
     }
   }
 
   avatar.classList.toggle("dead", alive === false);
-  
+
   if (alive === false) {
     avatar.remove();
     clientPlayers.delete(id);
@@ -247,29 +344,47 @@ export function leaveGame(id) {
 }
 
 export function updatePlayerPosition(id, position) {
-  // This function now updates the target for interpolation
   if (clientPlayers.has(id)) {
     const playerState = clientPlayers.get(id);
-    
-    // The old target becomes the new starting point for interpolation.
-    playerState.lastPos = { ...playerState.targetPos };
-    
-    // The new position from the server is the new target.
-    playerState.targetPos = { ...position };
-    
-    // Reset the timer for the new interpolation segment.
-    playerState.lastUpdateTime = Date.now();
+
+    // If the player is being reset to a spawn (e.g. after losing a life), snap instantly
+    const isTeleport = (
+      Math.abs(playerState.targetPos.x - position.x) > 1 ||
+      Math.abs(playerState.targetPos.y - position.y) > 1
+    );
+    if (isTeleport) {
+      playerState.lastPos = { ...position };
+      playerState.targetPos = { ...position };
+      playerState.lastUpdateTime = Date.now();
+      playerState.element.style.transform = `translate(${position.x * TILE_SIZE}px, ${position.y * TILE_SIZE}px)`;
+    } else {
+      // Normal movement interpolation
+      playerState.lastPos = { ...playerState.targetPos };
+      playerState.targetPos = { ...position };
+      playerState.lastUpdateTime = Date.now();
+    }
   }
 }
 
 // Add this function to render power-ups:
 
 export function renderPowerUps(powerUps) {
-  // Clear ALL existing power-ups first
-  document.querySelectorAll(".power-up").forEach((el) => el.remove());
-
   if (!powerUps) return;
 
+  const board = document.getElementById("game-board");
+  if (!board) return;
+
+  const existingPowerUpIds = new Set(powerUps.map(p => p.id));
+  const powerUpElements = board.querySelectorAll(".power-up");
+
+  // Remove power-ups that are no longer in the state
+  powerUpElements.forEach(el => {
+    if (!existingPowerUpIds.has(el.dataset.powerupId)) {
+      el.remove();
+    }
+  });
+
+  // Add new power-ups
   powerUps.forEach((powerUp) => {
     addPowerUp(powerUp);
   });
@@ -323,14 +438,14 @@ export function updateMapTiles(tiles, powerUps) {
 // reset to start page by removing user from localStorage and redirecting to main page
 // and updating gameStarted state
 export function reset() {
+    stopGame();
     localStorage.removeItem('user');
     window.location.hash = '/';
     updateGameStarted(false);
 }
 
 export function updateGameStarted(status) {
-  if (!status) return;
-    gameStarted = status;
+  gameStarted = status;
 }
 
 export function updateGameEnded(status) {
@@ -350,39 +465,80 @@ export function updateEliminationMessage() {
     }
 }
 
+function generatePlayerLives(player) {
+  const lifeIcons = Array(player.lives || 0)
+    .fill('<img src="./assets/lives.png" alt="Life" class="icon" />')
+    .join('');
+
+  const bombsHtml = `
+    <span class="powerups">Power-ups: </span>
+    <span class="player-bombs">Bombs: ${
+      player.bombCount > 1
+        ? '<img src="./assets/powerup_bomb.png" alt="Bomb" class="icon" />'.repeat(player.bombCount - 1)
+        : ''
+    }</span>`;
+
+  const rangeHtml = `
+    <span class="player-range">Range: ${
+      player.bombRange > 1
+        ? '<img src="./assets/powerup_range.png" alt="Range" class="icon" />'.repeat(player.bombRange - 1)
+        : ''
+    }</span>`;
+
+  const speedPowerUps = Math.max(0, Math.round((player.speed - 0.5) / 0.25));
+  const speedHtml = `
+    <span class="player-speed">Speed: ${
+      speedPowerUps > 0
+        ? '<img src="./assets/powerup_speed.png" alt="Speed" class="icon" />'.repeat(speedPowerUps)
+        : ''
+    }</span>`;
+
+  return `
+    <div class="player-top">
+      <span class="player-nick">${player.nickname}</span>
+      <span class="player-lives">${lifeIcons}</span>
+    </div>
+    <div class="player-bottom">
+      ${bombsHtml}
+      ${rangeHtml}
+      ${speedHtml}
+    </div>
+  `;
+}
+
+
 export function updateAllPlayerLives(players) {
   const livesEl = document.getElementById("player-lives");
   if (!livesEl || !Array.isArray(players)) return;
 
-  livesEl.innerHTML = ''; 
+  livesEl.innerHTML = '';
 
-  players.forEach(p => {
-    if (!p) return; 
+  players.forEach(player => {
+    if (!player) return;
 
-    const span = document.createElement("span");
-    span.className = "player-lives-info";
-    span.dataset.playerId = p.id;
-    span.textContent = `${p.nickname}: ${'❤️'.repeat(p.lives || 0)} `;
-    livesEl.appendChild(span);
+    const div = document.createElement("div");
+    div.className = "player-lives-info";
+    div.dataset.playerId = player.id;
+    div.innerHTML = generatePlayerLives(player);
+    livesEl.appendChild(div);
   });
 }
+
 
 export function updateSinglePlayerLives(player) {
   if (!player) return;
 
   const el = document.querySelector(`.player-lives-info[data-player-id="${player.id}"]`);
+  const livesEl = document.getElementById("player-lives");
+  if (!livesEl) return;
 
   if (el) {
-    el.textContent = `${player.nickname}: ${'❤️'.repeat(player.lives || 0)}`;
+    el.innerHTML = generatePlayerLives(player);
   } else {
-    const livesEl = document.getElementById("player-lives");
-    if (!livesEl) return;
-
-    const span = document.createElement("span");
-    span.className = "player-lives-info";
-    span.dataset.playerId = player.id;
-    span.textContent = `${player.nickname}: ${'❤️'.repeat(player.lives || 0)} `;
-    livesEl.appendChild(span);
+    const div = document.createElement("div");
+    div.className = "player-lives-info";
+    div.dataset.playerId = player.id;
+    div.innerHTML = generatePlayerLives(player);
+    livesEl.appendChild(div);
   }
 }
-

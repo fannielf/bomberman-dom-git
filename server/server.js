@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws'; // Import server from 'ws' package
-import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players, count, updateCount, gameState, removePlayer } from './game/state.js';
+import { deActivePlayer, handlePlayerMove, handlePlaceBomb, startGame, players, count, updateCount, gameState } from './game/state.js';
 import { clients, broadcast, sendMsg, updateConnection } from './handlers/connection.js'; // Import the clients map to manage connections
 import { handleJoin, readyTimer } from './handlers/main.js';
 import { sendLobbyUpdate } from './handlers/lobby.js'; // Import the lobby update function
@@ -34,6 +34,11 @@ server.on('connection', ws => {
     // Handle message types
     switch (data.type) {
       case 'join': // Join a game with a nickname
+        // check if game has started
+        if (gameState.status === 'running') {
+          sendMsg(ws, { type: 'error', message: 'Game has already started' });
+          return;
+        }
         handleJoin(id, ws, data);
         readyTimer(); // Start the ready timer if needed
         break;
