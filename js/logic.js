@@ -93,6 +93,11 @@ function gameLoop(timestamp) {
     return;
   }
 
+  if (user && clientPlayers.has(user.id) && clientPlayers.get(user.id).stunned) {
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
   // Throttle movement requests to avoid sending too many
   if (timestamp - lastMoveTime > MOVE_INTERVAL) {
     let direction = null;
