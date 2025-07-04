@@ -42,7 +42,7 @@ function addPlayer(client) {
     lives: 3,
     alive: true,
     position: { ...position },
-    speed: 0.8, // Default speed
+    speed: 0.5, // Default speed
     bombRange: 1, // Default bomb range
     bombCount: 1, // Default bomb count
     tempPowerUps: [],
@@ -305,7 +305,7 @@ function handlePlayerMove(id, direction) {
         player.bombRange += 1;
       } else if (powerUp.type === "speed") {
         // Permanent speed increase (25% faster)
-        player.speed = Math.round(player.speed * 1.25);
+        player.speed = Math.round(player.speed * 1.25 * 100) / 100;
       }
 
       gameState.map.powerUps.splice(powerUpIndex, 1);

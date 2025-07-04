@@ -53,14 +53,15 @@ function clientRenderLoop() {
     // Interpolate position
     const now = Date.now();
     const timeSinceUpdate = now - player.lastUpdateTime;
-    
+
     // Use player-specific speed for move duration. Must match server's baseCooldown.
-    const baseCooldown = 200; 
+    const baseCooldown = 100; // Lower this value to reduce smoothing (e.g., from 200 to 100)
     let moveDuration = baseCooldown / (player.speed || 1);
 
-    // At higher speeds, reduce interpolation time to make movement feel more responsive.
-    if (player.speed > 2) {
-      moveDuration *= 0.5; // Reduce interpolation time by 50% if speed is greater than 2
+    // Adjust interpolation duration for higher speeds
+    if (player.speed > 0.5) {
+      // Use an exponential reduction for a more noticeable effect at higher speeds
+      moveDuration /= Math.pow(player.speed, 0.5); // Reduce interpolation duration more aggressively
     }
 
     // Clamp progress between 0 and 1
@@ -69,6 +70,8 @@ function clientRenderLoop() {
     // Linear interpolation (lerp)
     const visualX = player.lastPos.x + (player.targetPos.x - player.lastPos.x) * progress;
     const visualY = player.lastPos.y + (player.targetPos.y - player.lastPos.y) * progress;
+    const speedFactor = Math.min(player.speed, 5); // cap the player speed
+    moveDuration /= Math.pow(speedFactor, 2); // Reduce interpolation duration more aggressively
 
     // Update CSS transform
     player.element.style.transform = `translate(${visualX * TILE_SIZE}px, ${visualY * TILE_SIZE}px)`;
