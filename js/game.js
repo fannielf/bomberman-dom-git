@@ -32,7 +32,7 @@ export function Game() {
       { 
         tag: "div", 
         attrs: { id: "elimination-message" }, 
-        children: ["You are out of lives! You can still watch and chat."] 
+        children: ["You have fallen into the dusk, but still may watch and whisper among the shadows."] 
       },
       {
         tag: "div",
