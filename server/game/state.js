@@ -3,6 +3,7 @@ import { broadcast, clients, sendMsg } from "../handlers/connection.js";
 import { players, playerPositions, getPlayerPositions } from "../handlers/players.js";
 import { updateCount } from "./utils.js";
 import { generateGameMap } from "../handlers/map.js";
+import { sendLobbyUpdate } from "../handlers/pregame.js";
 
 let readyTimer = null;
 
@@ -47,6 +48,15 @@ export function startCountdown() {
     }
 
     countdown--;
+    if (players.size < 2) {
+      // Reset countdown if less than 2 players
+      countdown = 10;
+      clearInterval(readyTimer);
+      readyTimer = null;
+      gameState.status = "waiting"; // Reset game state to waiting
+      sendLobbyUpdate();
+      return;
+    }
     broadcast({ type: "readyTimer", countdown });
 
     if (countdown <= 0) {

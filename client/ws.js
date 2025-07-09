@@ -59,6 +59,12 @@ function connect() {
         emit('showError', msg.message);
         break;
     case 'lobbyUpdate':
+        if (window.location.hash !== '#/lobby'){
+            window.location.hash = '/lobby'; // Redirect to lobby page
+            const user = JSON.parse(localStorage.getItem("user"));
+            sendMessage({ type: 'lobby', id: user.id }); // Request lobby update
+            return;
+        }; // Only update lobby if on lobby page
         console.log("lobby update message received:", msg);
         emit('updateLobby', {count: msg.count, players: msg.players, gameFull: msg.gameFull, chatHistory: msg.chatHistory});
         break;

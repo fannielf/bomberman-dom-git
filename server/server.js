@@ -140,10 +140,9 @@ server.on("connection", (ws) => {
   ws.on("close", () => {
     for (const [id, client] of clients.entries()) {
       if (client.ws === ws) {
-        // Give the client 2 seconds to reconnect (for page reloads)
         setTimeout(() => {
           clearConnection(ws); // Clear the connection
-        }, 2000);
+        }, 500); // Delay 0,5 seconds
         break;
       }
     }

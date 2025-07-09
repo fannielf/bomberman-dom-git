@@ -19,24 +19,25 @@ export function handleJoin(id, ws, data) {
     return;
   } else if (gameState.status !== 'waiting') { // Check if game has already started
     sendMsg(ws, { type: 'error', message: 'Game has already started' });
-    return;
+    return false;
   } 
 
   if (clients.size >= 4) { // Limit to 4 players
     sendMsg(ws, { type: 'error', message: 'Game is full', gameFull: clients.size >= 4 });
-    return;
+    return false;
 
   } else {
     const error = validateNickname(data);
     if (error) {
       sendMsg(ws, error);
-      return;
+      return false;
     }
 
     id = crypto.randomUUID(); // create unique ID
     clients.set(id, { ws, nickname: data.nickname.trim() }); // Store id, connection andn nickname
     sendMsg(ws, { type: 'playerJoined', id: id, nickname: clients.get(id).nickname});
   }
+  return true; // Successfully joined
 }
 
 // Sends a lobby update to all clients or a specific client
@@ -71,6 +72,8 @@ export function readyTimer() {
           clearInterval(waitTimer);
           waitTimer = null;
           firstJoinTime = null;
+          sendLobbyUpdate(); // Reset lobby update
+          return; // Stop the timer if less than 2 players
         } else if (clients.size === 4) {
           statusCountdown();
         } else if (Date.now() - firstJoinTime > 20000) {
@@ -89,7 +92,16 @@ export function readyTimer() {
 
 // Starts the countdown to the game and adds registered players to the game state
 function statusCountdown() {
+  if (clients.size < 2) {
+    clearInterval(waitTimer);
+    waitTimer = null;
+    firstJoinTime = null;
+    sendLobbyUpdate(); // Reset lobby update
+    return; // Ensure at least 2 players to start the game
+  }
+
   startCountdown();
+
   for (const [id, client] of clients) {
     addPlayer({ id, nickname: client.nickname }); // Add players to the game state
   }
